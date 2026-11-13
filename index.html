@@ -55,7 +55,12 @@
         height: 100dvh;
         max-height: 100dvh;
         overflow: hidden;
-        overscroll-behavior: none;
+        /* Let a pull at the very top chain to the browser so native
+           pull-to-refresh can fire; the thread also has its own
+           pull-down refresh (see #ptr below) because this fixed
+           header/footer layout keeps the document itself from
+           scrolling, which some mobile browsers require for PTR. */
+        overscroll-behavior-y: auto;
         touch-action: manipulation;
         -webkit-font-smoothing: antialiased;
       }
@@ -174,12 +179,84 @@
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
+        /* auto (not contain): a pull past the top must overscroll /
+           chain instead of being swallowed, so refresh can happen. */
+        overscroll-behavior-y: auto;
+        touch-action: pan-y;
         scroll-behavior: smooth;
         padding: 22px 16px 12px;
         padding-left: max(16px, env(safe-area-inset-left, 0px));
         padding-right: max(16px, env(safe-area-inset-right, 0px));
+        position: relative;
       }
+
+      /* ---------- Pull-to-refresh ---------- */
+      .ptr {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        justify-content: center;
+        height: 0;
+        overflow: visible;
+        pointer-events: none;
+      }
+
+      .ptr-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--rose-deep);
+        background: var(--paper);
+        border: 1.5px solid var(--blush);
+        border-radius: 999px;
+        padding: 8px 14px;
+        box-shadow: var(--shadow);
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+      }
+
+      .ptr.is-visible .ptr-pill { opacity: 1; transform: translateY(2px) scale(1); }
+      .ptr.is-ready .ptr-pill { background: var(--rose-soft); border-color: var(--rose); }
+
+      .ptr-arrow {
+        width: 15px;
+        height: 15px;
+        display: block;
+        flex: 0 0 auto;
+        transition: transform 0.15s ease;
+      }
+
+      .ptr.is-ready .ptr-arrow { transform: rotate(180deg); }
+
+      .ptr-spinner {
+        width: 15px;
+        height: 15px;
+        display: none;
+        flex: 0 0 auto;
+        border: 2px solid var(--blush);
+        border-top-color: var(--rose);
+        border-radius: 50%;
+        animation: ptr-spin 0.7s linear infinite;
+      }
+
+      .ptr.is-refreshing .ptr-arrow { display: none; }
+      .ptr.is-refreshing .ptr-spinner { display: block; }
+
+      @keyframes ptr-spin { to { transform: rotate(360deg); } }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ptr-spinner { animation-duration: 1.6s; }
+        .ptr-pill, .ptr-arrow { transition: none; }
+      }
+
+      /* While pulling, the thread follows the finger a little so the
+         gesture feels physical; JS caps and releases this. */
+      .thread.is-pulling { will-change: transform; }
 
       .thread {
         max-width: 680px;
@@ -755,6 +832,13 @@
     </header>
 
     <main id="scroller">
+      <div class="ptr" id="ptr" aria-hidden="true">
+        <span class="ptr-pill">
+          <svg class="ptr-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+          <span class="ptr-spinner" aria-hidden="true"></span>
+          <span class="ptr-label" id="ptrLabel">Pull down to refresh</span>
+        </span>
+      </div>
       <div class="thread" id="thread">
         <div class="empty" id="emptyState">
           <div class="omark" aria-hidden="true">“</div>
@@ -1595,6 +1679,101 @@
               setTimeout(scrollToBottom, 60);
             }
           });
+        }
+
+        /* --- Pull-to-refresh ---
+           The document itself never scrolls (fixed header/footer,
+           inner thread scroller), so the browser's own pull-to-
+           refresh can't be relied on. This gesture covers it: at
+           the very top of the thread, pulling down past the
+           threshold fetches the newest messages right away instead
+           of waiting for the next poll. Native PTR is also left
+           enabled via overscroll-behavior, as a bonus where the
+           browser does offer it. */
+        var ptrEl = document.getElementById("ptr");
+        var ptrLabel = document.getElementById("ptrLabel");
+        var PTR_THRESHOLD = 70;   // px of pull needed to trigger
+        var PTR_MAX = 110;        // px the thread follows the finger
+        var ptrStartY = null;
+        var ptrPull = 0;
+        var ptrRefreshing = false;
+
+        function ptrActive() {
+          return unlocked && !ptrRefreshing &&
+            (!clearOverlay || clearOverlay.hidden) &&
+            (!gateOverlay || gateOverlay.hidden);
+        }
+
+        function ptrRender() {
+          if (!ptrEl) return;
+          var show = ptrRefreshing || ptrPull > 8;
+          ptrEl.classList.toggle("is-visible", show);
+          ptrEl.classList.toggle("is-ready", !ptrRefreshing && ptrPull >= PTR_THRESHOLD);
+          ptrEl.classList.toggle("is-refreshing", ptrRefreshing);
+          if (ptrLabel) {
+            ptrLabel.textContent = ptrRefreshing
+              ? "Refreshing…"
+              : (ptrPull >= PTR_THRESHOLD ? "Release to refresh" : "Pull down to refresh");
+          }
+          if (thread) {
+            thread.classList.toggle("is-pulling", ptrPull > 0 && !ptrRefreshing);
+            thread.style.transform = (!ptrRefreshing && ptrPull > 0)
+              ? "translateY(" + Math.min(ptrPull * 0.45, PTR_MAX * 0.45) + "px)"
+              : "";
+          }
+        }
+
+        function ptrReset() {
+          ptrStartY = null;
+          ptrPull = 0;
+          ptrRender();
+        }
+
+        function ptrTrigger() {
+          ptrRefreshing = true;
+          ptrRender();
+          var done = function () {
+            ptrRefreshing = false;
+            ptrReset();
+          };
+          /* loadMessages resolves even on a quiet failure (it stays
+             silent by design), so the indicator always clears. */
+          loadMessages(false).then(done, done);
+        }
+
+        if (scroller && ptrEl) {
+          scroller.addEventListener("touchstart", function (e) {
+            if (!ptrActive() || scroller.scrollTop > 0) { ptrStartY = null; return; }
+            if (!e.touches || e.touches.length !== 1) { ptrStartY = null; return; }
+            ptrStartY = e.touches[0].clientY;
+            ptrPull = 0;
+          }, { passive: true });
+
+          /* Non-passive only so an at-top pull can be claimed before
+             the browser turns it into an overscroll bounce; ordinary
+             scrolling (not at top, or pushing up) is never touched. */
+          scroller.addEventListener("touchmove", function (e) {
+            if (ptrStartY === null || !ptrActive()) return;
+            if (scroller.scrollTop > 0) { ptrReset(); return; }
+            if (!e.touches || e.touches.length !== 1) return;
+            var dy = e.touches[0].clientY - ptrStartY;
+            if (dy <= 0) { ptrPull = 0; ptrRender(); return; }
+            e.preventDefault();
+            ptrPull = Math.min(dy, PTR_MAX);
+            ptrRender();
+          }, { passive: false });
+
+          scroller.addEventListener("touchend", function () {
+            if (ptrStartY === null) return;
+            var shouldRefresh = ptrActive() && ptrPull >= PTR_THRESHOLD;
+            var pullWas = ptrPull;
+            ptrStartY = null;
+            ptrPull = 0;
+            if (shouldRefresh) ptrTrigger();
+            else if (pullWas > 0) ptrRender();
+          }, { passive: true });
+
+          scroller.addEventListener("touchcancel", ptrReset, { passive: true });
         }
 
         document.addEventListener("visibilitychange", function () {
