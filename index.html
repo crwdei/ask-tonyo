@@ -969,7 +969,7 @@
       <div class="header-inner">
         <div class="monogram-wrap">
           <div class="monogram" aria-hidden="true">T</div>
-          <span class="presence-dot" role="img" aria-label="Jett is here for you" title="Jett is here for you"></span>
+          <span class="presence-dot" role="img" aria-label="Tonyo is here for you" title="Tonyo is here for you"></span>
         </div>
         <div class="header-text">
           <h1>Ask Tonyo</h1>
@@ -1004,7 +1004,7 @@
       <div class="thread" id="thread">
         <div class="empty" id="emptyState">
           <div class="omark" aria-hidden="true">“</div>
-          <p>No messages yet — say <strong>hi</strong> and ask away. Tonyo reads everything, and Jett will reply right here.</p>
+          <p>No messages yet — say <strong>hi</strong> and ask away. Tonyo reads everything, and Tonyo will reply right here.</p>
           <div class="sugg-chips">
             <button class="sugg-chip" type="button" data-starter="Can you help me with my homework? ">Help with homework</button>
             <button class="sugg-chip" type="button" data-starter="Can you explain this topic for me: ">Explain a topic</button>
@@ -1426,7 +1426,7 @@
           var strong = document.createElement("strong");
           strong.textContent = "hi";
           p.appendChild(strong);
-          p.appendChild(document.createTextNode(" and ask away. Tonyo reads everything, and Jett will reply right here."));
+          p.appendChild(document.createTextNode(" and ask away. Tonyo reads everything, and Tonyo will reply right here."));
           el.appendChild(mark);
           el.appendChild(p);
           var chips = document.createElement("div");
@@ -1479,7 +1479,7 @@
 
           var who = document.createElement("div");
           who.className = "who";
-          who.textContent = m.sender === "her" ? "You" : "Jett";
+          who.textContent = m.sender === "her" ? "You" : "Tonyo";
 
           var bubble = document.createElement("div");
           bubble.className = "bubble";
@@ -1672,7 +1672,7 @@
             .then(function (res) {
               if (!res.ok) throw new Error("upload " + res.status);
               uploadSucceeded = true;
-              var noteBody = "📎 Sent a file: " + originalName + " — tap Jett in the thread for help with it. [file:uploads/" + path + "]";
+              var noteBody = "📎 Sent a file: " + originalName + " — tap Tonyo in the thread for help with it. [file:uploads/" + path + "]";
               return fetch(API_URL, {
                 method: "POST",
                 headers: headers({
@@ -1699,7 +1699,7 @@
             .catch(function () {
               hideUploadStatus();
               if (uploadSucceeded) {
-                showError("Your file uploaded, but the note couldn't be posted — Jett may not see it. Try sending a short message about the file.");
+                showError("Your file uploaded, but the note couldn't be posted — Tonyo may not see it. Try sending a short message about the file.");
               } else {
                 showError("Couldn't upload — check your connection and try again.");
               }
