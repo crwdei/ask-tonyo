@@ -1036,7 +1036,7 @@
         <h2 id="gateTitle">This corner is just for you</h2>
         <p id="gateDesc">It's locked with a passcode now, so your chats stay between you and Tonyo. Type the passcode to open your chat.</p>
         <form class="gate-form" id="gateForm">
-          <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
+          <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" inputmode="numeric" pattern="[0-9]*" />
           <button class="gate-btn" id="unlockBtn" type="submit">Unlock</button>
           <p class="gate-error" id="gateError" role="alert"></p>
         </form>
