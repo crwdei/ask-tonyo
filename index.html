@@ -2,15 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#fffdf9" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <!-- Empty inline icon: stops the browser fetching /favicon.ico, which
          lives outside the artifact's routes and 404s. -->
     <link rel="icon" href="data:," />
     <title>Ask Tonyo</title>
     <style>
-      /* Phone tap targets: at least 32px tall. */
-      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+      /* Comfortable tap targets — 44px minimum on touch (Apple HIG / WCAG). */
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+      * { -webkit-tap-highlight-color: transparent; }
     </style>
     <style>
       :root {
@@ -34,7 +39,7 @@
 
       * { box-sizing: border-box; }
 
-      html, body { height: 100%; }
+      html { height: 100%; text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
 
       body {
         margin: 0;
@@ -46,8 +51,13 @@
         color: var(--ink);
         display: flex;
         flex-direction: column;
+        height: 100vh; /* fallback */
         height: 100dvh;
+        max-height: 100dvh;
         overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: manipulation;
+        -webkit-font-smoothing: antialiased;
       }
 
       /* ---------- Header ---------- */
@@ -56,7 +66,7 @@
         background: var(--paper);
         border-bottom: 1px solid var(--line);
         box-shadow: 0 2px 14px rgba(164, 62, 76, 0.05);
-        padding: 18px 20px 14px;
+        padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 14px;
       }
 
       .header-inner {
@@ -123,9 +133,15 @@
       /* ---------- Chat thread ---------- */
       main {
         flex: 1 1 auto;
+        min-height: 0; /* lets the thread shrink when the keyboard opens */
         overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        scroll-behavior: smooth;
         padding: 22px 16px 12px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
       }
 
       .thread {
@@ -190,8 +206,11 @@
         line-height: 1.55;
         white-space: pre-wrap;
         overflow-wrap: break-word;
+        word-break: break-word;
         box-shadow: var(--shadow);
       }
+
+      .bubble a { overflow-wrap: anywhere; }
 
       .msg.her .bubble {
         background: var(--bubble-her);
@@ -228,7 +247,8 @@
         flex: 0 0 auto;
         background: var(--paper);
         border-top: 1px solid var(--line);
-        padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+        box-shadow: 0 -4px 20px rgba(164, 62, 76, 0.05);
+        padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
       }
 
       .composer-wrap {
@@ -257,17 +277,20 @@
 
       textarea {
         flex: 1 1 auto;
+        min-width: 0; /* prevents overflow on narrow phones */
         font: inherit;
         font-size: 16px; /* avoids iOS zoom on focus */
         line-height: 1.45;
         color: var(--ink);
         background: var(--cream);
         border: 1.5px solid var(--line);
-        border-radius: 18px;
-        padding: 11px 15px;
+        border-radius: 20px;
+        padding: 12px 15px;
         resize: none;
+        min-height: 48px;
         max-height: 120px;
         outline: none;
+        overflow-y: auto;
       }
 
       textarea:focus { border-color: var(--rose); }
@@ -282,11 +305,15 @@
         background: var(--rose);
         border: none;
         border-radius: 999px;
-        padding: 11px 22px;
-        min-height: 44px;
+        padding: 12px 22px;
+        min-width: 76px;
+        min-height: 48px;
         cursor: pointer;
         box-shadow: 0 6px 16px rgba(196, 81, 95, 0.28);
         transition: background 0.15s ease, transform 0.1s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       .send-btn:hover:not(:disabled) { background: var(--rose-deep); }
@@ -300,12 +327,73 @@
         margin: 8px 0 0;
       }
 
-      @media (max-width: 520px) {
-        header { padding: 14px 16px 12px; }
-        h1 { font-size: 23px; }
-        .subtitle { font-size: 13px; }
+      /* ---------- Mobile optimisation ---------- */
+      @media (max-width: 640px) {
+        header {
+          padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+        }
+        .header-inner { gap: 10px; align-items: center; }
+        .monogram { width: 38px; height: 38px; font-size: 18px; border-width: 1px; }
+        h1 { font-size: 21px; margin-bottom: 2px; }
+        .subtitle {
+          font-size: 12.5px;
+          line-height: 1.45;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .status { padding-top: 0; }
         .status span.txt { display: none; }
-        .msg { max-width: 88%; }
+        .status .dot { width: 9px; height: 9px; }
+
+        main { padding: 14px 10px 8px; }
+        .thread { gap: 10px; }
+        .msg { max-width: 90%; }
+        .msg .who { font-size: 10.5px; margin-bottom: 3px; }
+        .bubble { padding: 10px 13px; font-size: 15px; line-height: 1.55; border-radius: 18px; }
+        .msg.her .bubble { border-radius: 18px 18px 6px 18px; }
+        .msg.jett .bubble { border-radius: 18px 18px 18px 6px; }
+        .msg .when { font-size: 10.5px; }
+
+        .empty { padding: 32px 16px; }
+        .empty .omark { font-size: 28px; }
+        .empty p { font-size: 14.5px; }
+
+        footer { padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); }
+        .composer { gap: 8px; }
+        textarea { padding: 12px 14px; border-radius: 22px; }
+        .send-btn { min-width: 68px; padding: 12px 18px; font-size: 15px; }
+        .hint { font-size: 11px; margin-top: 6px; }
+        .error-note { font-size: 12.5px; padding: 8px 10px; }
+      }
+
+      @media (max-width: 380px) {
+        .monogram { width: 34px; height: 34px; font-size: 16px; }
+        h1 { font-size: 20px; }
+        .subtitle { font-size: 12px; -webkit-line-clamp: 2; }
+        .msg { max-width: 93%; }
+        .bubble { font-size: 14.5px; padding: 9px 12px; }
+        .send-btn { min-width: 62px; padding: 12px 14px; }
+        textarea { padding: 12px 12px; }
+      }
+
+      /* Short / landscape phones: give the thread maximum room */
+      @media (max-height: 500px) and (orientation: landscape) {
+        header { padding-top: calc(6px + env(safe-area-inset-top, 0px)); padding-bottom: 6px; }
+        .subtitle { display: none; }
+        .monogram { width: 32px; height: 32px; font-size: 15px; }
+        h1 { font-size: 18px; margin: 0; }
+        main { padding-top: 10px; padding-bottom: 6px; }
+        footer { padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
+        .hint { display: none; }
+        textarea { max-height: 72px; }
+      }
+
+      /* Coarse-pointer devices: no hover lift, slightly larger hit areas */
+      @media (pointer: coarse) {
+        .send-btn:hover:not(:disabled) { background: var(--rose); }
+        textarea { font-size: 16px; }
       }
     </style>
   </head>
@@ -334,7 +422,7 @@
       <div class="composer-wrap">
         <div class="error-note" id="errorNote" role="alert">Couldn't send — check your connection and try again.</div>
         <form class="composer" id="composer">
-          <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off"></textarea>
+          <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
           <button class="send-btn" id="sendBtn" type="submit">Send</button>
         </form>
         <p class="hint">Messages are checked every few minutes — replies land in this same thread.</p>
@@ -493,10 +581,44 @@
 
         input.addEventListener("input", autosize);
         input.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" && !e.shiftKey) {
+          /* Desktop: Enter sends, Shift+Enter is a newline.
+             Touch keyboards: Enter stays a newline so she can write
+             multi-line messages — the Send button (or the keyboard's
+             own Send key via enterkeyhint) does the sending. */
+          var finePointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+          if (e.key === "Enter" && !e.shiftKey && finePointer) {
             e.preventDefault();
             send();
           }
+        });
+
+        /* --- Mobile keyboard handling --- */
+        var wasNearBottom = true;
+        function rememberScroll() { wasNearBottom = nearBottom(); }
+        scroller.addEventListener("scroll", rememberScroll, { passive: true });
+        scroller.addEventListener("touchstart", rememberScroll, { passive: true });
+
+        input.addEventListener("focus", function () {
+          /* Keyboard slides up after focus — wait, then keep the
+             latest messages + composer in view. */
+          setTimeout(function () { if (wasNearBottom || nearBottom()) scrollToBottom(); }, 300);
+          setTimeout(function () { if (wasNearBottom) scrollToBottom(); }, 550);
+        });
+
+        if (window.visualViewport) {
+          var lastVVHeight = window.visualViewport.height;
+          window.visualViewport.addEventListener("resize", function () {
+            var h = window.visualViewport.height;
+            var keyboardOpened = h < lastVVHeight - 80;
+            lastVVHeight = h;
+            if (keyboardOpened && wasNearBottom) {
+              setTimeout(scrollToBottom, 60);
+            }
+          });
+        }
+
+        document.addEventListener("visibilitychange", function () {
+          if (!document.hidden) loadMessages(false);
         });
 
         loadMessages(true);
