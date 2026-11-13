@@ -524,6 +524,140 @@
 
       .clear-status.show { display: block; }
 
+      /* ---------- Passcode gate ---------- */
+      .gate-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background:
+          radial-gradient(560px 380px at 110% -60px, rgba(232, 96, 110, 0.10), rgba(232, 96, 110, 0) 70%),
+          radial-gradient(480px 320px at -80px 108%, rgba(125, 143, 116, 0.12), rgba(125, 143, 116, 0) 70%),
+          var(--cream);
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        padding-left: max(20px, env(safe-area-inset-left, 0px));
+        padding-right: max(20px, env(safe-area-inset-right, 0px));
+        overflow-y: auto;
+      }
+
+      .gate-overlay[hidden] { display: none !important; }
+
+      .gate-card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 18px 44px rgba(74, 50, 48, 0.16);
+        padding: 26px 24px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+
+      .gate-card .monogram {
+        margin: 0 auto 14px;
+        width: 52px;
+        height: 52px;
+        font-size: 25px;
+      }
+
+      .gate-card h2 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--rose-deep);
+        margin: 0 0 8px;
+      }
+
+      .gate-card p {
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: var(--ink-soft);
+        margin: 0;
+      }
+
+      .gate-form { margin-top: 18px; }
+
+      .gate-form input {
+        width: 100%;
+        font: inherit;
+        font-size: 16px; /* avoids iOS zoom on focus */
+        color: var(--ink);
+        background: var(--cream);
+        border: 1.5px solid var(--line);
+        border-radius: 14px;
+        padding: 12px 15px;
+        min-height: 48px;
+        outline: none;
+        text-align: center;
+      }
+
+      .gate-form input:focus { border-color: var(--rose); }
+
+      .gate-btn {
+        width: 100%;
+        margin-top: 12px;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        background: var(--rose);
+        border: none;
+        border-radius: 999px;
+        padding: 12px 22px;
+        min-height: 48px;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(196, 81, 95, 0.28);
+        transition: background 0.15s ease, transform 0.1s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .gate-btn:hover:not(:disabled) { background: var(--rose-deep); }
+      .gate-btn:active:not(:disabled) { transform: scale(0.97); }
+      .gate-btn:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
+
+      .gate-error {
+        display: none;
+        font-size: 13.5px !important;
+        color: var(--rose-deep) !important;
+        background: var(--rose-soft);
+        border: 1px solid var(--blush);
+        border-radius: 10px;
+        padding: 8px 12px;
+        margin-top: 12px !important;
+      }
+
+      .gate-error.show { display: block; }
+
+      /* ---------- Lock button ---------- */
+      .lock-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: var(--paper);
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 14px;
+        min-height: 44px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .lock-btn[hidden] { display: none !important; }
+      .lock-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
+      .lock-btn:hover { background: var(--cream); border-color: var(--blush); }
+      .lock-btn:active { transform: scale(0.97); }
+
       /* ---------- Mobile optimisation ---------- */
       @media (max-width: 640px) {
         header {
@@ -545,6 +679,7 @@
         .status .dot { width: 9px; height: 9px; }
         .header-actions { gap: 6px; }
         .clear-btn { font-size: 12.5px; padding: 8px 12px; }
+        .lock-btn { font-size: 12.5px; padding: 8px 12px; }
 
         main { padding: 14px 10px 8px; }
         .thread { gap: 10px; }
@@ -611,6 +746,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
             Clear chat
           </button>
+          <button class="lock-btn" id="lockBtn" type="button" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Lock
+          </button>
         </div>
       </div>
     </header>
@@ -640,6 +779,19 @@
       </div>
     </footer>
 
+    <div class="gate-overlay" id="gateOverlay">
+      <div class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gateTitle" aria-describedby="gateDesc">
+        <div class="monogram" aria-hidden="true">T</div>
+        <h2 id="gateTitle">This corner is just for you</h2>
+        <p id="gateDesc">It's locked with a passcode now, so your chats stay between you and Tonyo. Type the passcode to open your chat.</p>
+        <form class="gate-form" id="gateForm">
+          <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" />
+          <button class="gate-btn" id="unlockBtn" type="submit">Unlock</button>
+          <p class="gate-error" id="gateError" role="alert"></p>
+        </form>
+      </div>
+    </div>
+
     <div class="clear-overlay" id="clearOverlay" hidden>
       <div class="clear-dialog" role="alertdialog" aria-modal="true" aria-labelledby="clearTitle" aria-describedby="clearDesc">
         <h2 id="clearTitle">Clear this chat?</h2>
@@ -656,8 +808,18 @@
       (function () {
         var API_URL = "https://vagijhlfaflssatfavqp.supabase.co/rest/v1/chat_messages";
         var STORAGE_URL = "https://vagijhlfaflssatfavqp.supabase.co/storage/v1/object/uploads/";
-        var API_KEY = "sb_publishable_abgP9Cbn7x3_AletyMy2tw_0vY0osl5";
-        var THREAD_TOKEN = "c2dddc81fdd59fa1940758757d354e96";
+        /* The inbox key and thread token are NOT stored in this page.
+           They are scrambled into the blob below with a keystream
+           derived from the passcode (SHA-256, XOR, base64), and only
+           ever exist in memory after a successful unlock — nothing is
+           written to cookies or browser storage, so a reload always
+           asks for the passcode again. The blob on its own opens
+           nothing: without the passcode the thread stays locked. */
+        var SCRAMBLED_CREDENTIALS = "awjy7LEJxap+cU0UYEbXx+u5+XwI7xH/uWWQ4XHio6lH8sX/mSHwMssjQdNQAZ7y/ZhyxW0FVJ5CyNKj/kGHDDeAkhEZDdwT5nU038GkRA==";
+        var API_KEY = null;      // set in memory only, by a successful unlock
+        var THREAD_TOKEN = null; // set in memory only, by a successful unlock
+        var unlocked = false;
+        var pollTimer = null;
         var POLL_MS = 5000;
         var MAX_FILE_BYTES = 20971520; // 20 MB
         var ALLOWED_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"];
@@ -679,6 +841,12 @@
         var clearCancel = document.getElementById("clearCancel");
         var clearConfirm = document.getElementById("clearConfirm");
         var clearStatus = document.getElementById("clearStatus");
+        var gateOverlay = document.getElementById("gateOverlay");
+        var gateForm = document.getElementById("gateForm");
+        var passcodeInput = document.getElementById("passcodeInput");
+        var unlockBtn = document.getElementById("unlockBtn");
+        var gateError = document.getElementById("gateError");
+        var lockBtn = document.getElementById("lockBtn");
 
         /* Her side of the inbox can read and post, but not delete — so
            clearing posts a hidden marker message instead. Everything at
@@ -693,6 +861,7 @@
         var clearing = false;
         var clearedBeforeId = 0; // hide every message with id <= this
         var uploadStatusTimer = null;
+        var unlocking = false;
 
         function headers(extra) {
           var h = {
@@ -705,6 +874,211 @@
           }
           return h;
         }
+
+        /* ---------- Passcode gate ---------- */
+        /* Minimal SHA-256 (UTF-8 string -> byte array), used only to
+           derive the XOR keystream from the passcode. */
+        function sha256Bytes(ascii) {
+          function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+          var maxWord = Math.pow(2, 32);
+          var words = [], asciiBitLength = ascii.length * 8;
+          var hash = (sha256Bytes.h = sha256Bytes.h || []),
+              k = (sha256Bytes.k = sha256Bytes.k || []);
+          var primeCounter = k.length, isComposite = {};
+          for (var candidate = 2; primeCounter < 64; candidate++) {
+            if (!isComposite[candidate]) {
+              for (var i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+              hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+              k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+            }
+          }
+          ascii += "\x80";
+          while ((ascii.length % 64) - 56) ascii += "\x00";
+          for (var i2 = 0; i2 < ascii.length; i2++) {
+            var j = ascii.charCodeAt(i2);
+            if (j >> 8) throw new Error("ASCII only");
+            words[i2 >> 2] |= j << (((3 - i2) % 4) * 8);
+          }
+          words[words.length] = (asciiBitLength / maxWord) | 0;
+          words[words.length] = asciiBitLength;
+          for (var j2 = 0; j2 < words.length;) {
+            var w = words.slice(j2, (j2 += 16)), oldHash = hash;
+            hash = hash.slice(0, 8);
+            for (var i3 = 0; i3 < 64; i3++) {
+              var w15 = w[i3 - 15], w2 = w[i3 - 2];
+              var a = hash[0], e = hash[4];
+              var temp1 = hash[7] +
+                (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) +
+                ((e & hash[5]) ^ (~e & hash[6])) +
+                k[i3] +
+                (w[i3] = i3 < 16 ? w[i3] : (w[i3 - 16] +
+                  (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) +
+                  w[i3 - 7] +
+                  (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
+              var temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) +
+                ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+              hash = [(temp1 + temp2) | 0].concat(hash);
+              hash[4] = (hash[4] + temp1) | 0;
+            }
+            for (var i4 = 0; i4 < 8; i4++) hash[i4] = (hash[i4] + oldHash[i4]) | 0;
+          }
+          var out = [];
+          for (var i5 = 0; i5 < 8; i5++) {
+            for (var j3 = 3; j3 + 1; j3--) out.push((hash[i5] >> (j3 * 8)) & 0xff);
+          }
+          return out;
+        }
+
+        function utf8Encode(str) {
+          var bytes = [], i, c;
+          for (i = 0; i < str.length; i++) {
+            c = str.charCodeAt(i);
+            if (c < 0x80) bytes.push(c);
+            else if (c < 0x800) { bytes.push(0xc0 | (c >> 6)); bytes.push(0x80 | (c & 0x3f)); }
+            else { bytes.push(0xe0 | (c >> 12)); bytes.push(0x80 | ((c >> 6) & 0x3f)); bytes.push(0x80 | (c & 0x3f)); }
+          }
+          return bytes;
+        }
+
+        function utf8Decode(bytes) {
+          var s = "", i = 0, c;
+          while (i < bytes.length) {
+            c = bytes[i];
+            if (c < 0x80) { s += String.fromCharCode(c); i += 1; }
+            else if (c < 0xe0) { s += String.fromCharCode(((c & 0x1f) << 6) | (bytes[i + 1] & 0x3f)); i += 2; }
+            else { s += String.fromCharCode(((c & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f)); i += 3; }
+          }
+          return s;
+        }
+
+        function sha256OfString(str) {
+          var bytes = utf8Encode(str);
+          var s = "";
+          for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+          return sha256Bytes(s);
+        }
+
+        function base64Decode(b64) {
+          var bin = atob(b64);
+          var bytes = [];
+          for (var i = 0; i < bin.length; i++) bytes.push(bin.charCodeAt(i) & 0xff);
+          return bytes;
+        }
+
+        /* Returns { key, token } when the passcode unscrambles the
+           blob into well-formed credentials, otherwise null. A wrong
+           passcode yields garbage bytes that fail the shape checks,
+           so it is rejected here — before any network call is made. */
+        function unscrambleCredentials(passcode) {
+          try {
+            var cipher = base64Decode(SCRAMBLED_CREDENTIALS);
+            var plain = [], counter = 0, offset = 0, block;
+            while (offset < cipher.length) {
+              block = sha256OfString(passcode + "|" + counter);
+              for (var i = 0; i < block.length && offset < cipher.length; i++, offset++) {
+                plain.push(cipher[offset] ^ block[i]);
+              }
+              counter++;
+            }
+            var parts = utf8Decode(plain).split("\n");
+            if (parts.length !== 2) return null;
+            if (!/^sb_publishable_[A-Za-z0-9_\-]+$/.test(parts[0])) return null;
+            if (!/^[0-9a-f]{32}$/.test(parts[1])) return null;
+            return { key: parts[0], token: parts[1] };
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function showGateError(text) {
+          gateError.textContent = text;
+          gateError.classList.add("show");
+        }
+
+        function hideGateError() {
+          gateError.classList.remove("show");
+          gateError.textContent = "";
+        }
+
+        /* Drop every credential and rendered message, stop polling,
+           and put the passcode gate back up. Used by the Lock button,
+           and whenever the inbox rejects the credentials in memory —
+           fail closed: a bad token re-prompts instead of half-working. */
+        function relock(message) {
+          unlocked = false;
+          unlocking = false;
+          API_KEY = null;
+          THREAD_TOKEN = null;
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          seen = {};
+          clearedBeforeId = 0;
+          var nodes = thread.querySelectorAll(".msg");
+          for (var i = nodes.length - 1; i >= 0; i--) nodes[i].parentNode.removeChild(nodes[i]);
+          showEmptyState();
+          if (lockBtn) lockBtn.hidden = true;
+          if (clearOverlay) clearOverlay.hidden = true;
+          passcodeInput.value = "";
+          unlockBtn.disabled = false;
+          unlockBtn.textContent = "Unlock";
+          if (message) showGateError(message);
+          else hideGateError();
+          gateOverlay.hidden = false;
+          passcodeInput.focus();
+        }
+
+        function tryUnlock(e) {
+          if (e) e.preventDefault();
+          if (unlocking || unlocked) return;
+          var passcode = passcodeInput.value;
+          if (!passcode) { showGateError("Type the passcode to open your chat."); return; }
+          unlocking = true;
+          unlockBtn.disabled = true;
+          unlockBtn.textContent = "Unlocking…";
+          hideGateError();
+
+          var creds = unscrambleCredentials(passcode);
+          passcodeInput.value = "";
+          if (!creds) {
+            unlocking = false;
+            unlockBtn.disabled = false;
+            unlockBtn.textContent = "Unlock";
+            showGateError("That passcode didn't work — try again.");
+            passcodeInput.focus();
+            return;
+          }
+
+          API_KEY = creds.key;
+          THREAD_TOKEN = creds.token;
+
+          /* Fail closed: even a passcode that unscrambles cleanly is
+             only accepted once the inbox itself confirms the token.
+             A non-200 here means the token is wrong or has been
+             rotated, so the page stays locked and asks again. */
+          fetch(API_URL + "?select=id&order=id.asc&limit=1", { headers: headers() })
+            .then(function (res) {
+              if (!res.ok) throw new Error("verify " + res.status);
+              return res.json();
+            })
+            .then(function () {
+              unlocked = true;
+              unlocking = false;
+              unlockBtn.disabled = false;
+              unlockBtn.textContent = "Unlock";
+              hideGateError();
+              gateOverlay.hidden = true;
+              if (lockBtn) lockBtn.hidden = false;
+              loadMessages(true);
+              if (pollTimer) clearInterval(pollTimer);
+              pollTimer = setInterval(function () { loadMessages(false); }, POLL_MS);
+              input.focus();
+            })
+            .catch(function () {
+              relock("That passcode didn't work — try again.");
+            });
+        }
+
+        if (gateForm) gateForm.addEventListener("submit", tryUnlock);
+        if (lockBtn) lockBtn.addEventListener("click", function () { relock(""); });
 
         function showError(text) {
           if (text) errorNote.textContent = text;
@@ -888,9 +1262,14 @@
         }
 
         function loadMessages(initial) {
+          if (!unlocked || !API_KEY || !THREAD_TOKEN) return Promise.resolve();
           return fetch(API_URL + "?select=*&order=id.asc", { headers: headers() })
             .then(function (res) {
-              if (!res.ok) throw new Error("load " + res.status);
+              if (!res.ok) {
+                var err = new Error("load " + res.status);
+                err.status = res.status;
+                throw err;
+              }
               return res.json();
             })
             .then(function (rows) {
@@ -909,7 +1288,14 @@
               updateClearBtn();
               if (initial || (hadNew && wasNear)) scrollToBottom();
             })
-            .catch(function () {
+            .catch(function (err) {
+              /* If the inbox rejects the credentials in memory, fail
+                 closed: re-lock and ask for the passcode again rather
+                 than polling forever against a dead token. */
+              if (unlocked && err && (err.status === 401 || err.status === 403)) {
+                relock("That passcode didn't work — try again.");
+                return;
+              }
               /* Polling retries on its own; stay quiet so the page never nags. */
             });
         }
@@ -921,7 +1307,7 @@
 
         function send() {
           var text = input.value.trim();
-          if (!text || sending || uploading || clearing) return;
+          if (!text || sending || uploading || clearing || !unlocked) return;
           sending = true;
           sendBtn.disabled = true;
           if (attachBtn) attachBtn.classList.add("disabled");
@@ -936,7 +1322,11 @@
             body: JSON.stringify({ sender: "her", body: text })
           })
             .then(function (res) {
-              if (!res.ok) throw new Error("send " + res.status);
+              if (!res.ok) {
+                var err = new Error("send " + res.status);
+                err.status = res.status;
+                throw err;
+              }
               return res.json();
             })
             .then(function (rows) {
@@ -947,7 +1337,13 @@
                 scrollToBottom();
               }
             })
-            .catch(function () {
+            .catch(function (err) {
+              if (err && (err.status === 401 || err.status === 403)) {
+                /* The inbox rejected these credentials — re-lock and
+                   ask for the passcode instead of retrying sends. */
+                relock("That passcode didn't work — try again.");
+                return;
+              }
               /* Keep the typed text so she can retry. */
               showError("Couldn't send — check your connection and try again.");
             })
@@ -956,12 +1352,12 @@
               sendBtn.disabled = uploading ? true : false;
               if (attachBtn && !uploading) attachBtn.classList.remove("disabled");
               updateClearBtn();
-              input.focus();
+              if (unlocked) input.focus();
             });
         }
 
         function handleUpload(file) {
-          if (!file || uploading || sending || clearing) return;
+          if (!file || uploading || sending || clearing || !unlocked) return;
 
           hideError();
           hideUploadStatus();
@@ -1064,7 +1460,7 @@
         }
 
         function doClear() {
-          if (clearing) return;
+          if (clearing || !unlocked) return;
           clearing = true;
           updateClearBtn();
           clearCancel.disabled = true;
@@ -1082,7 +1478,11 @@
             body: JSON.stringify({ sender: "her", body: CLEAR_MARKER })
           })
             .then(function (res) {
-              if (!res.ok) throw new Error("clear " + res.status);
+              if (!res.ok) {
+                var err = new Error("clear " + res.status);
+                err.status = res.status;
+                throw err;
+              }
               return res.json();
             })
             .then(function (rows) {
@@ -1108,8 +1508,16 @@
               showUploadStatus("Chat cleared — fresh thread, ready when you are.", true);
               if (input) input.focus();
             })
-            .catch(function () {
+            .catch(function (err) {
               clearing = false;
+              if (err && (err.status === 401 || err.status === 403)) {
+                /* The inbox rejected these credentials — re-lock and
+                   ask for the passcode instead of retrying. */
+                clearCancel.disabled = false;
+                clearConfirm.disabled = false;
+                relock("That passcode didn't work — try again.");
+                return;
+              }
               clearCancel.disabled = false;
               clearConfirm.disabled = false;
               clearStatus.textContent = "Couldn't clear — check your connection and try again.";
@@ -1193,8 +1601,12 @@
           if (!document.hidden) loadMessages(false);
         });
 
-        loadMessages(true);
-        setInterval(function () { loadMessages(false); }, POLL_MS);
+        /* Locked on load: nothing is fetched or rendered until the
+           passcode unscrambles working credentials. A reload always
+           lands back on the gate, because the credentials live in
+           memory only — there is nothing stored to re-open with. */
+        if (lockBtn) lockBtn.hidden = true;
+        passcodeInput.focus();
       })();
     </script>
   </body>
