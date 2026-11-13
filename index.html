@@ -123,7 +123,7 @@
       }
 
       /* Presence dot sits on the avatar itself, so it reads as
-         "Jett is here" instead of floating loose in the corner. */
+         "Tonyo is here" instead of floating loose in the corner. */
       .presence-dot {
         position: absolute;
         right: 0;
@@ -453,6 +453,84 @@
         margin: 4px 8px 0;
       }
 
+      /* ---------- Typing indicator (Tonyo) ---------- */
+      .typing-row {
+        display: flex;
+        flex-direction: column;
+        align-self: flex-start;
+        align-items: flex-start;
+        max-width: 82%;
+        animation: rise 0.25s ease-out;
+      }
+
+      .typing-row .who {
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 0 6px 4px;
+        color: var(--rose);
+      }
+
+      .typing-bubble {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        background: var(--bubble-jett);
+        color: var(--ink-soft);
+        border: 1px solid var(--line);
+        border-radius: 20px 20px 20px 6px;
+        box-shadow: var(--shadow);
+      }
+
+      .typing-text {
+        font-size: 13.5px;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .typing-dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex: 0 0 auto;
+      }
+
+      .typing-dots span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--rose);
+        opacity: 0.3;
+        animation: typing-bounce 1.15s ease-in-out infinite;
+      }
+
+      .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+      .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+      @keyframes typing-bounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+        30% { transform: translateY(-4px); opacity: 1; }
+      }
+
+      @media (max-width: 640px) {
+        .typing-row { max-width: 90%; }
+        .typing-row .who { font-size: 10.5px; margin-bottom: 3px; }
+        .typing-bubble { padding: 11px 13px; border-radius: 18px 18px 18px 6px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .typing-row { animation: none; }
+        .typing-dots span { animation: typing-fade 1.6s ease-in-out infinite; transform: none; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.25s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.5s; }
+        @keyframes typing-fade {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+      }
+
       @keyframes rise {
         from { opacity: 0; transform: translateY(6px); }
         to { opacity: 1; transform: translateY(0); }
@@ -504,6 +582,68 @@
 
       .upload-status.show { display: block; }
       .upload-status.success { color: #4a5d43; background: #eef3ec; border-color: #cfdcc9; }
+
+      /* ---------- Staged attachments (waiting for Send) ---------- */
+      .staged-files {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin-bottom: 10px;
+      }
+
+      .staged-files[hidden] { display: none !important; }
+      .staged-files.is-uploading { opacity: 0.6; pointer-events: none; }
+
+      .staged-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        max-width: 100%;
+        background: var(--cream);
+        border: 1.5px solid var(--blush);
+        border-radius: 999px;
+        padding: 5px 5px 5px 12px;
+        font-size: 13px;
+        color: var(--ink);
+      }
+
+      .staged-chip .chip-name {
+        font-weight: 600;
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 170px;
+      }
+
+      .staged-chip .chip-meta {
+        font-size: 12px;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+
+      .staged-chip .chip-remove {
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        padding: 0;
+        display: grid;
+        place-items: center;
+        font: inherit;
+        font-size: 16px;
+        line-height: 1;
+        color: var(--rose-deep);
+        background: var(--paper);
+        border: 1px solid var(--blush);
+        border-radius: 50%;
+        cursor: pointer;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .staged-chip .chip-remove:active { transform: scale(0.94); }
 
       .composer {
         display: flex;
@@ -568,6 +708,37 @@
         margin-top: 3px;
         font-weight: 400;
       }
+
+      /* A message can now carry her words plus several files:
+         the text sits on top, each file gets its own block. */
+      .bubble .file-entry { margin-top: 10px; }
+      .bubble .file-entry:first-child { margin-top: 0; }
+
+      /* Files Tonyo sends back (finished work) get a real download
+         button — the file comes down inside the chat, no email
+         step and nobody else's approval tap in between. */
+      .file-download {
+        margin-top: 9px;
+        font: inherit;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #fff;
+        background: var(--rose);
+        border: none;
+        border-radius: 999px;
+        padding: 9px 18px;
+        min-height: 40px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(196, 81, 95, 0.25);
+        transition: background 0.15s ease, transform 0.1s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .file-download:hover:not(:disabled) { background: var(--rose-deep); }
+      .file-download:active:not(:disabled) { transform: scale(0.97); }
+      .file-download:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
 
       textarea {
         flex: 1 1 auto;
@@ -840,6 +1011,18 @@
         cursor: not-allowed;
       }
 
+      .gate-note {
+        font-size: 12.5px !important;
+        line-height: 1.55;
+        color: var(--ink-soft) !important;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+        margin-top: 18px !important;
+        text-align: left;
+      }
+
+      .gate-note strong { color: var(--rose-deep); font-weight: 600; }
+
       /* ---------- Lock button ---------- */
       .lock-btn {
         display: grid;
@@ -1048,15 +1231,16 @@
       <div class="composer-wrap">
         <div class="upload-status" id="uploadStatus" role="status" aria-live="polite"></div>
         <div class="error-note" id="errorNote" role="alert">Couldn't send — check your connection and try again.</div>
+        <div class="staged-files" id="stagedFiles" hidden aria-label="Files ready to send"></div>
         <form class="composer" id="composer">
           <button class="attach-btn" id="attachBtn" type="button" aria-label="Attach a photo or document" title="Attach a photo or document">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
-          <input class="file-input-hidden" type="file" id="fileInput" tabindex="-1" aria-hidden="true" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv" />
+          <input class="file-input-hidden" type="file" id="fileInput" multiple tabindex="-1" aria-hidden="true" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv" />
           <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
           <button class="send-btn" id="sendBtn" type="submit">Send</button>
         </form>
-        <p class="hint">Attached files are removed after 12 hours.</p>
+        <p class="hint">Files wait here until you tap Send — add a message to go with them if you like. Sent files are removed after 12 hours.</p>
       </div>
     </footer>
 
@@ -1071,6 +1255,7 @@
           <p class="gate-error" id="gateError" role="alert"></p>
           <p class="gate-cooldown" id="gateCooldown" role="timer" aria-live="polite" hidden><span>Too many tries — wait</span><span class="cd-num" id="gateCooldownNum">20</span><span>seconds</span></p>
         </form>
+        <p class="gate-note"><strong>Is the public code a risk?</strong> Anyone can read this page's code, but it holds no account passwords, and your chats stay locked without the passcode. Guessing the passcode is deliberately slowed down — still, a short passcode isn't unbreakable for someone determined, so keep it just between you and Tonyo.</p>
       </div>
     </div>
 
@@ -1095,10 +1280,11 @@
              storage, so typing a variable name in the console finds
              nothing: a console assignment just creates a new global
              and never touches the values in here.
-           - The browser's real fetch/atob are captured NOW, at load.
-             If code injected later replaces window.fetch to spy on
-             requests, this page keeps using the captured originals,
-             so the replacement never sees the inbox headers.
+           - The browser's real fetch/atob/WebCrypto are captured NOW,
+             at load. If code injected later replaces window.fetch to
+             spy on requests, this page keeps using the captured
+             originals, so the replacement never sees the inbox
+             headers or the key derivation.
            - The CSP meta tag in <head> limits network calls to the
              inbox origin only, so injected code cannot send stolen
              data to another server from this page.
@@ -1109,16 +1295,25 @@
            read from the console. */
         var nativeFetch = window.fetch ? window.fetch.bind(window) : null;
         var nativeAtob = window.atob ? window.atob.bind(window) : null;
+        var nativeSubtle = (window.crypto && window.crypto.subtle) ? window.crypto.subtle : null;
         var API_URL = "https://vagijhlfaflssatfavqp.supabase.co/rest/v1/chat_messages";
         var STORAGE_URL = "https://vagijhlfaflssatfavqp.supabase.co/storage/v1/object/uploads/";
         /* The inbox key and thread token are NOT stored in this page.
-           They are scrambled into the blob below with a keystream
-           derived from the passcode (SHA-256, XOR, base64), and only
-           ever exist in memory after a successful unlock — nothing is
-           written to cookies or browser storage, so a reload always
-           asks for the passcode again. The blob on its own opens
-           nothing: without the passcode the thread stays locked. */
-        var SCRAMBLED_CREDENTIALS = "7fINMYsHuhWu+TtjWDS1OdvZTCLmw/WG2plp3/7UpzQ/FpD/7A/rejW+clqHz1nMjunM5vVyoVQQPxf1Q439mSjYXUKXig/tgfG3y7yDfQ==";
+           They are scrambled into the blob below with a key derived
+           from the passcode by PBKDF2-HMAC-SHA-256 at 600,000 rounds
+           (XOR, base64), and only ever exist in memory after a
+           successful unlock — nothing is written to cookies or
+           browser storage, so a reload always asks for the passcode
+           again. The derivation is deliberately slow: every guess,
+           typed or scripted against a copied blob, costs real
+           computing time, so grinding through every possible
+           passcode takes days to weeks instead of minutes. The blob
+           on its own opens nothing: without the passcode the thread
+           stays locked. The salt is not a secret — it just makes
+           each blob unique so precomputed tables are useless. */
+        var SCRAMBLED_CREDENTIALS = "51DWl2ldUm9i24qpoEJSv+Vj6zlOj0GXuN9DZeCHlut0u/nMvMTIEeix+gZ0ioxZl9iyc2h0Q2eqCyZDqDxSL6lWxx+oIl2fDDYh+dBL9Q==";
+        var PBKDF2_SALT_B64 = "uVwNv1ODeRsaegSwPihmCA==";
+        var PBKDF2_ITERATIONS = 600000;
         var API_KEY = null;      // set in memory only, by a successful unlock
         var THREAD_TOKEN = null; // set in memory only, by a successful unlock
         var unlocked = false;
@@ -1137,6 +1332,7 @@
         var sendBtn = document.getElementById("sendBtn");
         var errorNote = document.getElementById("errorNote");
         var uploadStatus = document.getElementById("uploadStatus");
+        var stagedFilesEl = document.getElementById("stagedFiles");
         var attachBtn = document.getElementById("attachBtn");
         var fileInput = document.getElementById("fileInput");
         var clearBtn = document.getElementById("clearBtn");
@@ -1164,6 +1360,10 @@
         var CLEAR_MARKER = "[clear-chat]";
 
         var seen = {};       // id -> true, so polling never duplicates a bubble
+        var typingEl = null;
+        var typingTimer = null;
+        var stagedFiles = []; // picked files waiting for Send — nothing uploads before that
+        var MAX_STAGED_FILES = 5;
         var sending = false;
         var uploading = false;
         var clearing = false;
@@ -1245,58 +1445,9 @@
         }
 
         /* ---------- Passcode gate ---------- */
-        /* Minimal SHA-256 (UTF-8 string -> byte array), used only to
-           derive the XOR keystream from the passcode. */
-        function sha256Bytes(ascii) {
-          function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
-          var maxWord = Math.pow(2, 32);
-          var words = [], asciiBitLength = ascii.length * 8;
-          var hash = (sha256Bytes.h = sha256Bytes.h || []),
-              k = (sha256Bytes.k = sha256Bytes.k || []);
-          var primeCounter = k.length, isComposite = {};
-          for (var candidate = 2; primeCounter < 64; candidate++) {
-            if (!isComposite[candidate]) {
-              for (var i = 0; i < 313; i += candidate) isComposite[i] = candidate;
-              hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
-              k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
-            }
-          }
-          ascii += "\x80";
-          while ((ascii.length % 64) - 56) ascii += "\x00";
-          for (var i2 = 0; i2 < ascii.length; i2++) {
-            var j = ascii.charCodeAt(i2);
-            if (j >> 8) throw new Error("ASCII only");
-            words[i2 >> 2] |= j << (((3 - i2) % 4) * 8);
-          }
-          words[words.length] = (asciiBitLength / maxWord) | 0;
-          words[words.length] = asciiBitLength;
-          for (var j2 = 0; j2 < words.length;) {
-            var w = words.slice(j2, (j2 += 16)), oldHash = hash;
-            hash = hash.slice(0, 8);
-            for (var i3 = 0; i3 < 64; i3++) {
-              var w15 = w[i3 - 15], w2 = w[i3 - 2];
-              var a = hash[0], e = hash[4];
-              var temp1 = hash[7] +
-                (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) +
-                ((e & hash[5]) ^ (~e & hash[6])) +
-                k[i3] +
-                (w[i3] = i3 < 16 ? w[i3] : (w[i3 - 16] +
-                  (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) +
-                  w[i3 - 7] +
-                  (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
-              var temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) +
-                ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
-              hash = [(temp1 + temp2) | 0].concat(hash);
-              hash[4] = (hash[4] + temp1) | 0;
-            }
-            for (var i4 = 0; i4 < 8; i4++) hash[i4] = (hash[i4] + oldHash[i4]) | 0;
-          }
-          var out = [];
-          for (var i5 = 0; i5 < 8; i5++) {
-            for (var j3 = 3; j3 + 1; j3--) out.push((hash[i5] >> (j3 * 8)) & 0xff);
-          }
-          return out;
-        }
+        /* The passcode key is derived with the browser's native
+           PBKDF2 (WebCrypto) — see unscrambleCredentials below. No
+           fast hash is used anywhere near the credentials. */
 
         function utf8Encode(str) {
           var bytes = [], i, c;
@@ -1320,13 +1471,6 @@
           return s;
         }
 
-        function sha256OfString(str) {
-          var bytes = utf8Encode(str);
-          var s = "";
-          for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
-          return sha256Bytes(s);
-        }
-
         function base64Decode(b64) {
           var bin = nativeAtob(b64);
           var bytes = [];
@@ -1334,28 +1478,42 @@
           return bytes;
         }
 
-        /* Returns { key, token } when the passcode unscrambles the
-           blob into well-formed credentials, otherwise null. A wrong
-           passcode yields garbage bytes that fail the shape checks,
-           so it is rejected here — before any network call is made. */
+        /* Returns a Promise for { key, token } when the passcode
+           unscrambles the blob into well-formed credentials, or
+           null. A wrong passcode yields garbage bytes that fail the
+           shape checks, so it is rejected here — before any network
+           call is made. The PBKDF2 derivation (600,000 rounds of
+           HMAC-SHA-256, run by the browser's native WebCrypto) is
+           deliberately slow — roughly a second on a phone — and
+           that same cost is what an offline guessing script pays
+           for every single try against a copied blob. */
         function unscrambleCredentials(passcode) {
+          if (!nativeSubtle) return Promise.resolve(null);
           try {
             var cipher = base64Decode(SCRAMBLED_CREDENTIALS);
-            var plain = [], counter = 0, offset = 0, block;
-            while (offset < cipher.length) {
-              block = sha256OfString(passcode + "|" + counter);
-              for (var i = 0; i < block.length && offset < cipher.length; i++, offset++) {
-                plain.push(cipher[offset] ^ block[i]);
-              }
-              counter++;
-            }
-            var parts = utf8Decode(plain).split("\n");
-            if (parts.length !== 2) return null;
-            if (!/^sb_publishable_[A-Za-z0-9_\-]+$/.test(parts[0])) return null;
-            if (!/^[0-9a-f]{32}$/.test(parts[1])) return null;
-            return { key: parts[0], token: parts[1] };
+            var salt = new Uint8Array(base64Decode(PBKDF2_SALT_B64));
+            var passBytes = new Uint8Array(utf8Encode(passcode));
+            return nativeSubtle.importKey("raw", passBytes, "PBKDF2", false, ["deriveBits"])
+              .then(function (keyMaterial) {
+                return nativeSubtle.deriveBits(
+                  { name: "PBKDF2", salt: salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+                  keyMaterial,
+                  cipher.length * 8
+                );
+              })
+              .then(function (bits) {
+                var derived = new Uint8Array(bits);
+                var plain = [];
+                for (var i = 0; i < cipher.length; i++) plain.push(cipher[i] ^ derived[i]);
+                var parts = utf8Decode(plain).split("\n");
+                if (parts.length !== 2) return null;
+                if (!/^sb_publishable_[A-Za-z0-9_\-]+$/.test(parts[0])) return null;
+                if (!/^[0-9a-f]{32}$/.test(parts[1])) return null;
+                return { key: parts[0], token: parts[1] };
+              })
+              .catch(function () { return null; });
           } catch (e) {
-            return null;
+            return Promise.resolve(null);
           }
         }
 
@@ -1387,6 +1545,9 @@
           clearedBeforeId = 0;
           var nodes = thread.querySelectorAll(".msg");
           for (var i = nodes.length - 1; i >= 0; i--) nodes[i].parentNode.removeChild(nodes[i]);
+          hideTyping();
+          stagedFiles = [];
+          renderStaged();
           showEmptyState();
           if (lockBtn) lockBtn.hidden = true;
           if (clearOverlay) clearOverlay.hidden = true;
@@ -1410,66 +1571,76 @@
           if (isCoolingDown()) { renderCooldown(); return; }
           var passcode = passcodeInput.value;
           if (!passcode) { showGateError("Type the passcode to open your chat."); return; }
-          unlocking = true;
-          unlockBtn.disabled = true;
-          unlockBtn.textContent = "Unlocking…";
-          hideGateError();
-
-          var creds = unscrambleCredentials(passcode);
-          /* The typed passcode is needed no longer — clear it from
-             the field and drop our copy right away. */
-          passcodeInput.value = "";
-          passcode = "";
-          if (!creds) {
-            unlocking = false;
-            if (recordFailedAttempt()) {
-              hideGateError();
-            } else {
-              unlockBtn.disabled = false;
-              unlockBtn.textContent = "Unlock";
-              showGateError("That passcode didn't work — try again." + attemptsLeftText());
-              passcodeInput.focus();
-            }
+          if (!nativeSubtle) {
+            /* No WebCrypto means no slow derivation — fail closed
+               rather than falling back to anything fast or weak. */
+            showGateError("This browser can't open the lock securely — try an up-to-date browser.");
             return;
           }
-          /* Freeze the pair so nothing can quietly swap the values
-             the headers are built from after unlock. */
-          try { creds = Object.freeze(creds); } catch (err) {}
+          unlocking = true;
+          unlockBtn.disabled = true;
+          unlockBtn.textContent = "Unlocking\u2026";
+          hideGateError();
 
-          API_KEY = creds.key;
-          THREAD_TOKEN = creds.token;
-
-          /* Fail closed: even a passcode that unscrambles cleanly is
-             only accepted once the inbox itself confirms the token.
-             A non-200 here means the token is wrong or has been
-             rotated, so the page stays locked and asks again. */
-          nativeFetch(API_URL + "?select=id&order=id.asc&limit=1", { headers: headers() })
-            .then(function (res) {
-              if (!res.ok) throw new Error("verify " + res.status);
-              return res.json();
-            })
-            .then(function () {
-              unlocked = true;
+          /* The slow PBKDF2 derivation runs first (about a second);
+             only then is the result checked and verified. */
+          unscrambleCredentials(passcode).then(function (creds) {
+            /* The typed passcode is needed no longer — clear it
+               from the field and drop our copy right away. */
+            passcodeInput.value = "";
+            passcode = "";
+            if (!creds) {
               unlocking = false;
-              /* A correct passcode clears the strike count. */
-              failedAttempts = 0;
-              unlockBtn.disabled = false;
-              unlockBtn.textContent = "Unlock";
-              hideGateError();
-              gateOverlay.hidden = true;
-              if (lockBtn) lockBtn.hidden = false;
-              loadMessages(true);
-              if (pollTimer) clearInterval(pollTimer);
-              pollTimer = setInterval(function () { loadMessages(false); }, POLL_MS);
-              input.focus();
-            })
-            .catch(function () {
-              /* A server-side rejection counts as a failed try too,
-                 so the cooldown cannot be dodged with a passcode
-                 that unscrambles but is no longer accepted. */
-              if (recordFailedAttempt()) relock("");
-              else relock("That passcode didn't work — try again." + attemptsLeftText());
-            });
+              if (recordFailedAttempt()) {
+                hideGateError();
+              } else {
+                unlockBtn.disabled = false;
+                unlockBtn.textContent = "Unlock";
+                showGateError("That passcode didn't work \u2014 try again." + attemptsLeftText());
+                passcodeInput.focus();
+              }
+              return;
+            }
+            /* Freeze the pair so nothing can quietly swap the values
+               the headers are built from after unlock. */
+            try { creds = Object.freeze(creds); } catch (err) {}
+
+            API_KEY = creds.key;
+            THREAD_TOKEN = creds.token;
+
+            /* Fail closed: even a passcode that unscrambles cleanly
+               is only accepted once the inbox itself confirms the
+               token. A non-200 here means the token is wrong or has
+               been rotated, so the page stays locked and asks again. */
+            nativeFetch(API_URL + "?select=id&order=id.asc&limit=1", { headers: headers() })
+              .then(function (res) {
+                if (!res.ok) throw new Error("verify " + res.status);
+                return res.json();
+              })
+              .then(function () {
+                unlocked = true;
+                unlocking = false;
+                /* A correct passcode clears the strike count. */
+                failedAttempts = 0;
+                unlockBtn.disabled = false;
+                unlockBtn.textContent = "Unlock";
+                hideGateError();
+                gateOverlay.hidden = true;
+                if (lockBtn) lockBtn.hidden = false;
+                loadMessages(true);
+                if (pollTimer) clearInterval(pollTimer);
+                pollTimer = setInterval(function () { loadMessages(false); }, POLL_MS);
+                input.focus();
+              })
+              .catch(function () {
+                /* A server-side rejection counts as a failed try
+                   too, so the cooldown cannot be dodged with a
+                   passcode that unscrambles but is no longer
+                   accepted. */
+                if (recordFailedAttempt()) relock("");
+                else relock("That passcode didn't work \u2014 try again." + attemptsLeftText());
+              });
+          });
         }
 
         if (gateForm) gateForm.addEventListener("submit", tryUnlock);
@@ -1544,6 +1715,64 @@
           scroller.scrollTop = scroller.scrollHeight;
         }
 
+        /* ---------- Typing indicator ----------
+           Shown right after her message lands, so the wait for
+           Tonyo's reply (the watcher checks every ~30s) doesn't
+           feel like silence. It is a separate element — never a
+           .msg — so the clear-chat count and purge logic ignore
+           it. It hides the moment a Tonyo bubble arrives, when
+           the chat is cleared or locked, or after 2 minutes as a
+           safety net if no reply is coming. */
+        function showTyping() {
+          if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+          typingTimer = setTimeout(hideTyping, 120000);
+          if (typingEl && typingEl.parentNode === thread) { scrollToBottom(); return; }
+          if (emptyState && emptyState.parentNode) {
+            emptyState.parentNode.removeChild(emptyState);
+            emptyState = null;
+          }
+          var row = document.createElement("div");
+          row.className = "typing-row";
+          row.setAttribute("role", "status");
+          row.setAttribute("aria-label", "Tonyo is typing");
+          var who = document.createElement("div");
+          who.className = "who";
+          who.textContent = "Tonyo";
+          var bubble = document.createElement("div");
+          bubble.className = "typing-bubble";
+          var label = document.createElement("span");
+          label.className = "typing-text";
+          label.textContent = "Tonyo is typing";
+          var dots = document.createElement("span");
+          dots.className = "typing-dots";
+          dots.setAttribute("aria-hidden", "true");
+          for (var i = 0; i < 3; i++) dots.appendChild(document.createElement("span"));
+          bubble.appendChild(label);
+          bubble.appendChild(dots);
+          row.appendChild(who);
+          row.appendChild(bubble);
+          thread.appendChild(row);
+          typingEl = row;
+          scrollToBottom();
+        }
+
+        function hideTyping() {
+          if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+          if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+          typingEl = null;
+        }
+
+        /* After a load, the indicator should reflect reality:
+           her message is last and unanswered -> typing; Tonyo
+           already replied (or the thread is empty) -> none. */
+        function syncTypingWithThread() {
+          var msgs = thread.querySelectorAll(".msg");
+          if (!msgs.length) { hideTyping(); return; }
+          var last = msgs[msgs.length - 1];
+          if (last.classList.contains("her")) showTyping();
+          else hideTyping();
+        }
+
         function isClearMarker(m) {
           return !!m && typeof m.body === "string" && m.body.trim() === CLEAR_MARKER;
         }
@@ -1598,7 +1827,7 @@
             var mid = parseInt(nodes[i].getAttribute("data-id") || "0", 10);
             if (mid && mid <= clearedBeforeId) nodes[i].parentNode.removeChild(nodes[i]);
           }
-          if (!thread.querySelector(".msg")) showEmptyState();
+          if (!thread.querySelector(".msg")) { hideTyping(); showEmptyState(); }
           updateClearBtn();
         }
 
@@ -1608,6 +1837,9 @@
 
           /* Clear markers and anything they cleared never render. */
           if (isClearMarker(m) || m.id <= clearedBeforeId) { updateClearBtn(); return; }
+
+          /* A real reply from Tonyo ends the wait. */
+          if (m.sender !== "her") hideTyping();
 
           if (emptyState && emptyState.parentNode) {
             emptyState.parentNode.removeChild(emptyState);
@@ -1630,33 +1862,83 @@
           var isFileMsg = !isFileError && (bodyText.indexOf("[file:uploads/") !== -1 || bodyText.indexOf("📎 Sent a file:") === 0);
 
           if (isFileMsg) {
-            var fileName = "";
+            /* A file message can now hold her own words plus one
+               file line per attachment. Lines starting with the
+               file prefix become file blocks; every other line is
+               her text, shown above them. Older single-file
+               messages have exactly one file line and no text, so
+               they render exactly as before. */
             var prefix = "📎 Sent a file: ";
-            if (bodyText.indexOf(prefix) === 0) {
-              var rest = bodyText.slice(prefix.length);
-              var dashIdx = rest.indexOf(" — ");
-              fileName = dashIdx !== -1 ? rest.slice(0, dashIdx) : rest.replace(/\s*\[file:uploads\/[^\]]+\]\s*$/, "");
-            }
-            if (!fileName) {
-              var markerMatch = bodyText.match(/\[file:uploads\/([^\]]+)\]/);
-              if (markerMatch) {
-                var rawPath = markerMatch[1];
-                var slashParts = rawPath.split("/");
-                fileName = slashParts[slashParts.length - 1].replace(/^\d+-/, "") || "Attached file";
-              } else {
-                fileName = "Attached file";
+            var textLines = [];
+            var fileEntries = [];
+            bodyText.split("\n").forEach(function (line) {
+              if (line.indexOf(prefix) === 0) {
+                var pm = line.match(/\[file:uploads\/([^\]]+)\]/);
+                var fpath = pm ? pm[1] : null;
+                var rest = line.slice(prefix.length);
+                var dashIdx = rest.indexOf(" — ");
+                var nm = dashIdx !== -1 ? rest.slice(0, dashIdx) : rest.replace(/\s*\[file:uploads\/[^\]]+\]\s*$/, "");
+                if (!nm && fpath) {
+                  var slashParts = fpath.split("/");
+                  nm = slashParts[slashParts.length - 1].replace(/^\d+-/, "") || "Attached file";
+                }
+                if (!nm) nm = "Attached file";
+                fileEntries.push({ name: nm, path: fpath });
+              } else if (line.indexOf("[file:uploads/") !== -1) {
+                /* A delivered file from Tonyo can arrive as a bare
+                   marker line, or a marker tucked into a text line:
+                   pull every marker out as a file entry and keep
+                   whatever words remain as message text. */
+                var re = /\[file:uploads\/([^\]]+)\]/g;
+                var mm2;
+                while ((mm2 = re.exec(line)) !== null) {
+                  var p2 = mm2[1];
+                  var parts2 = p2.split("/");
+                  fileEntries.push({ name: parts2[parts2.length - 1].replace(/^\d+-/, "") || "Attached file", path: p2 });
+                }
+                var cleaned = line.replace(/\s*\[file:uploads\/[^\]]+\]\s*/g, " ").trim();
+                if (cleaned) textLines.push(cleaned);
+              } else if (line.trim() !== "") {
+                textLines.push(line);
               }
+            });
+            if (!fileEntries.length) fileEntries.push({ name: "Attached file", path: null });
+            if (textLines.length) {
+              var textEl = document.createElement("div");
+              textEl.textContent = textLines.join("\n");
+              bubble.appendChild(textEl);
             }
-            var ext = fileExtension(fileName);
-            var isImage = IMAGE_EXTS.indexOf(ext) !== -1;
-            var nameEl = document.createElement("div");
-            nameEl.className = "file-name";
-            nameEl.textContent = "📎 " + fileName;
-            var metaEl = document.createElement("div");
-            metaEl.className = "file-meta";
-            metaEl.textContent = isImage ? "Photo · expires in 12 hours" : "Document · expires in 12 hours";
-            bubble.appendChild(nameEl);
-            bubble.appendChild(metaEl);
+            fileEntries.forEach(function (fe) {
+              var fname = fe.name;
+              var entry = document.createElement("div");
+              entry.className = "file-entry";
+              var fExt = fileExtension(fname);
+              var fIsImage = IMAGE_EXTS.indexOf(fExt) !== -1;
+              var nameEl = document.createElement("div");
+              nameEl.className = "file-name";
+              nameEl.textContent = "📎 " + fname;
+              var metaEl = document.createElement("div");
+              metaEl.className = "file-meta";
+              metaEl.textContent = fIsImage ? "Photo · expires in 12 hours" : "Document · expires in 12 hours";
+              entry.appendChild(nameEl);
+              entry.appendChild(metaEl);
+              /* Tonyo's own file messages are deliveries — finished
+                 work coming back to her. Give those a download
+                 button wired to the stored file; her own uploads
+                 need none (the file came from her device). */
+              if (m.sender !== "her" && fe.path) {
+                var dlBtn = document.createElement("button");
+                dlBtn.type = "button";
+                dlBtn.className = "file-download";
+                dlBtn.textContent = "Download";
+                dlBtn.setAttribute("aria-label", "Download " + fname);
+                (function (path, name, btn) {
+                  btn.addEventListener("click", function () { downloadDeliveredFile(path, name, btn); });
+                })(fe.path, fname, dlBtn);
+                entry.appendChild(dlBtn);
+              }
+              bubble.appendChild(entry);
+            });
           } else {
             bubble.textContent = bodyText;
           }
@@ -1696,8 +1978,15 @@
               rows.forEach(function (m) {
                 if (!seen[m.id]) { addMessage(m, !initial); hadNew = true; }
               });
+              /* On first load (e.g. she reopened the page while a
+                 reply is still pending) restore the indicator if
+                 her message is the last one. Later polls are left
+                 to addMessage / the send path, so the indicator
+                 never flickers back on after its timeout. */
+              if (initial) syncTypingWithThread();
               updateClearBtn();
               if (initial || (hadNew && wasNear)) scrollToBottom();
+              if (typingEl && wasNear) scrollToBottom();
             })
             .catch(function (err) {
               /* If the inbox rejects the credentials in memory, fail
@@ -1718,7 +2007,11 @@
 
         function send() {
           var text = input.value.trim();
-          if (!text || sending || uploading || clearing || !unlocked) return;
+          if (sending || uploading || clearing || !unlocked) return;
+          if (!text && !stagedFiles.length) return;
+          /* Files staged in the composer go out together with
+             whatever she typed, as one message. */
+          if (stagedFiles.length) { sendWithFiles(text); return; }
           sending = true;
           sendBtn.disabled = true;
           if (attachBtn) attachBtn.classList.add("disabled");
@@ -1745,6 +2038,7 @@
               autosize();
               if (rows && rows.length) {
                 addMessage(rows[0], true);
+                showTyping();
                 scrollToBottom();
               }
             })
@@ -1767,90 +2061,223 @@
             });
         }
 
-        function handleUpload(file) {
-          if (!file || uploading || sending || clearing || !unlocked) return;
+        /* ---------- Staged attachments ----------
+           Picking a file no longer sends anything. Files wait in
+           the composer as removable chips; only tapping Send
+           uploads them — together with whatever she typed — as a
+           single message: her words first, then one file line per
+           attachment, in the same note format the thread and the
+           watcher already understand. */
 
+        function formatBytes(n) {
+          if (n === null || n === undefined || isNaN(n)) return "";
+          if (n < 1024) return n + " B";
+          if (n < 1048576) return Math.round(n / 1024) + " KB";
+          return (n / 1048576).toFixed(1).replace(/\.0$/, "") + " MB";
+        }
+
+        function renderStaged() {
+          if (!stagedFilesEl) return;
+          while (stagedFilesEl.firstChild) stagedFilesEl.removeChild(stagedFilesEl.firstChild);
+          if (!stagedFiles.length) { stagedFilesEl.hidden = true; return; }
+          stagedFilesEl.hidden = false;
+          stagedFiles.forEach(function (f, i) {
+            var chip = document.createElement("span");
+            chip.className = "staged-chip";
+            var nm = document.createElement("span");
+            nm.className = "chip-name";
+            nm.textContent = "📎 " + (f.name || "file");
+            var meta = document.createElement("span");
+            meta.className = "chip-meta";
+            meta.textContent = formatBytes(f.size);
+            var rm = document.createElement("button");
+            rm.type = "button";
+            rm.className = "chip-remove";
+            rm.textContent = "×";
+            rm.setAttribute("data-remove", String(i));
+            rm.setAttribute("aria-label", "Remove " + (f.name || "file"));
+            rm.title = "Remove";
+            chip.appendChild(nm);
+            chip.appendChild(meta);
+            chip.appendChild(rm);
+            stagedFilesEl.appendChild(chip);
+          });
+        }
+
+        function stageFiles(files) {
+          if (!files || !files.length || sending || uploading || clearing || !unlocked) return;
           hideError();
-          hideUploadStatus();
-
-          var ext = fileExtension(file.name);
-          var typeOk = (ext && ALLOWED_EXTS.indexOf(ext) !== -1) || (file.type && ALLOWED_TYPES.indexOf(file.type) !== -1);
-          if (!typeOk) {
-            showError("That file type isn't supported — try a photo (JPG, PNG, WebP, GIF), a PDF, or an Office document.");
-            return;
+          var firstError = "";
+          for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var ext = fileExtension(file.name);
+            var typeOk = (ext && ALLOWED_EXTS.indexOf(ext) !== -1) || (file.type && ALLOWED_TYPES.indexOf(file.type) !== -1);
+            if (!typeOk) {
+              if (!firstError) firstError = "That file type isn't supported — try a photo (JPG, PNG, WebP, GIF), a PDF, or an Office document.";
+              continue;
+            }
+            if (file.size > MAX_FILE_BYTES) {
+              if (!firstError) firstError = (file.name || "A file") + " is too big — the max is 20 MB per file.";
+              continue;
+            }
+            if (file.size === 0) {
+              if (!firstError) firstError = (file.name || "A file") + " looks empty — try picking it again.";
+              continue;
+            }
+            if (stagedFiles.length >= MAX_STAGED_FILES) {
+              if (!firstError) firstError = "You can attach up to " + MAX_STAGED_FILES + " files at a time — send these first, then attach more.";
+              break;
+            }
+            stagedFiles.push(file);
           }
+          if (firstError) showError(firstError);
+          renderStaged();
+          if (stagedFiles.length) input.focus();
+        }
 
-          if (file.size > MAX_FILE_BYTES) {
-            showError("That file is too big — the max is 20 MB. Try a smaller file or a photo instead.");
-            return;
-          }
+        /* Fetch a file Tonyo delivered into the thread and save it
+           to her device. Uses the same captured fetch and inbox
+           headers as everything else; the blob URL is same-page,
+           so the CSP (img-src/blob: allowances aside, anchor
+           downloads are not fetches) doesn't block the save. */
+        function downloadDeliveredFile(path, name, btn) {
+          if (!unlocked || !API_KEY || !THREAD_TOKEN || !btn || btn.disabled) return;
+          var original = "Download";
+          btn.disabled = true;
+          btn.textContent = "Preparing…";
+          nativeFetch(STORAGE_URL + encodeURIComponent(path), { headers: headers() })
+            .then(function (res) {
+              if (!res.ok) {
+                var err = new Error("download " + res.status);
+                err.status = res.status;
+                throw err;
+              }
+              return res.blob();
+            })
+            .then(function (blob) {
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement("a");
+              a.href = url;
+              a.download = name || "file";
+              document.body.appendChild(a);
+              a.click();
+              if (a.parentNode) a.parentNode.removeChild(a);
+              setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+              btn.textContent = original;
+              btn.disabled = false;
+            })
+            .catch(function (err) {
+              if (err && (err.status === 401 || err.status === 403)) {
+                relock("That passcode didn't work — try again.");
+                return;
+              }
+              btn.textContent = "Couldn't download — tap to retry";
+              btn.disabled = false;
+            });
+        }
 
-          if (file.size === 0) {
-            showError("That file looks empty — try picking it again.");
-            return;
-          }
-
-          var originalName = file.name || "file";
-          var sanitised = sanitiseFileName(originalName);
-          var path = Date.now() + "-" + sanitised;
-
-          uploading = true;
-          form.classList.add("is-uploading");
-          if (attachBtn) attachBtn.classList.add("disabled");
-          sendBtn.disabled = true;
-          showUploadStatus("Uploading " + originalName + "…", false);
-
-          var uploadSucceeded = false;
-
-          nativeFetch(STORAGE_URL + encodeURIComponent(path), {
+        function uploadOne(file, idx) {
+          var sanitised = sanitiseFileName(file.name || "file");
+          var path = (Date.now() + idx) + "-" + sanitised;
+          return nativeFetch(STORAGE_URL + encodeURIComponent(path), {
             method: "POST",
             headers: headers({
               "Content-Type": file.type || "application/octet-stream",
               "x-upsert": "false"
             }),
             body: file
-          })
-            .then(function (res) {
-              if (!res.ok) throw new Error("upload " + res.status);
-              uploadSucceeded = true;
-              var noteBody = "📎 Sent a file: " + originalName + " — tap Tonyo in the thread for help with it. [file:uploads/" + path + "]";
+          }).then(function (res) {
+            if (!res.ok) {
+              var err = new Error("upload " + res.status);
+              err.status = res.status;
+              throw err;
+            }
+            return { name: file.name || "file", path: path };
+          });
+        }
+
+        function sendWithFiles(text) {
+          var files = stagedFiles.slice();
+          sending = true;
+          uploading = true;
+          form.classList.add("is-uploading");
+          if (stagedFilesEl) stagedFilesEl.classList.add("is-uploading");
+          if (attachBtn) attachBtn.classList.add("disabled");
+          sendBtn.disabled = true;
+          hideError();
+          hideUploadStatus();
+
+          var uploaded = [];
+          var chain = Promise.resolve();
+          files.forEach(function (f, i) {
+            chain = chain.then(function () {
+              showUploadStatus(
+                "Uploading " + (f.name || "file") + (files.length > 1 ? " (" + (i + 1) + " of " + files.length + ")" : "") + "…",
+                false
+              );
+              return uploadOne(f, i).then(function (u) { uploaded.push(u); });
+            });
+          });
+
+          chain
+            .then(function () {
+              var lines = [];
+              if (text) lines.push(text);
+              uploaded.forEach(function (u) {
+                lines.push("📎 Sent a file: " + u.name + " — tap Tonyo in the thread for help with it. [file:uploads/" + u.path + "]");
+              });
               return nativeFetch(API_URL, {
                 method: "POST",
                 headers: headers({
                   "Content-Type": "application/json",
                   "Prefer": "return=representation"
                 }),
-                body: JSON.stringify({ sender: "her", body: noteBody })
+                body: JSON.stringify({ sender: "her", body: lines.join("\n") })
               });
             })
             .then(function (res) {
-              if (!res || !res.ok) throw new Error("note " + (res ? res.status : "failed"));
+              if (!res.ok) {
+                var err = new Error("send " + res.status);
+                err.status = res.status;
+                throw err;
+              }
               return res.json();
             })
             .then(function (rows) {
               hideUploadStatus();
-              showUploadStatus("File sent — it will be removed after 12 hours.", true);
+              stagedFiles = [];
+              renderStaged();
+              input.value = "";
+              autosize();
               if (rows && rows.length) {
                 addMessage(rows[0], true);
+                showTyping();
                 scrollToBottom();
               } else {
-                loadMessages(false);
+                loadMessages(false).then(function () { syncTypingWithThread(); });
               }
             })
-            .catch(function () {
+            .catch(function (err) {
               hideUploadStatus();
-              if (uploadSucceeded) {
-                showError("Your file uploaded, but the note couldn't be posted — Tonyo may not see it. Try sending a short message about the file.");
-              } else {
-                showError("Couldn't upload — check your connection and try again.");
+              if (err && (err.status === 401 || err.status === 403)) {
+                sending = false;
+                uploading = false;
+                relock("That passcode didn't work — try again.");
+                return;
               }
+              /* Nothing is lost: her words and the staged chips
+                 stay in the composer so she can tap Send again. */
+              showError("Couldn't send — check your connection and try again. Your message and files are still here.");
             })
             .then(function () {
+              sending = false;
               uploading = false;
               form.classList.remove("is-uploading");
+              if (stagedFilesEl) stagedFilesEl.classList.remove("is-uploading");
               if (attachBtn) attachBtn.classList.remove("disabled");
-              sendBtn.disabled = sending ? true : false;
+              sendBtn.disabled = false;
               updateClearBtn();
+              if (unlocked) input.focus();
             });
         }
 
@@ -1971,10 +2398,27 @@
 
         if (fileInput) {
           fileInput.addEventListener("change", function () {
-            var file = fileInput.files && fileInput.files[0];
+            /* Every picked file stages in the composer — nothing
+               uploads until she taps Send. Slice to a real array
+               before resetting the input. */
+            var picked = fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
             /* Reset so picking the same file again still fires change. */
             fileInput.value = "";
-            if (file) handleUpload(file);
+            if (picked.length) stageFiles(picked);
+          });
+        }
+
+        /* Tapping a staged chip's × takes that file back out
+           before anything is sent. */
+        if (stagedFilesEl) {
+          stagedFilesEl.addEventListener("click", function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest("[data-remove]") : null;
+            if (!btn || sending || uploading || clearing) return;
+            var idx = parseInt(btn.getAttribute("data-remove"), 10);
+            if (isNaN(idx) || idx < 0 || idx >= stagedFiles.length) return;
+            stagedFiles.splice(idx, 1);
+            renderStaged();
+            input.focus();
           });
         }
 
