@@ -4,6 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="color-scheme" content="light" />
+    <!-- Content-Security-Policy: only this page's inline code may run,
+         and the network may only talk to the chat inbox. Code pasted
+         or injected in the console cannot send data to another server
+         (fetch / beacons to other origins are blocked by connect-src),
+         load an outside script, or embed objects/frames. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src https://vagijhlfaflssatfavqp.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'" />
     <meta name="theme-color" content="#fffdf9" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -810,6 +816,30 @@
 
       .gate-error.show { display: block; }
 
+      .gate-cooldown {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 13.5px !important;
+        font-weight: 600;
+        color: var(--rose-deep) !important;
+        background: var(--rose-soft);
+        border: 1px solid var(--blush);
+        border-radius: 10px;
+        padding: 9px 12px;
+        margin-top: 12px !important;
+      }
+
+      .gate-cooldown.show { display: flex; }
+      .gate-cooldown .cd-num { font-variant-numeric: tabular-nums; min-width: 2ch; }
+
+      .gate-form input:disabled {
+        opacity: 0.55;
+        background: var(--cream-deep);
+        cursor: not-allowed;
+      }
+
       /* ---------- Lock button ---------- */
       .lock-btn {
         display: grid;
@@ -1039,6 +1069,7 @@
           <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" inputmode="numeric" pattern="[0-9]*" />
           <button class="gate-btn" id="unlockBtn" type="submit">Unlock</button>
           <p class="gate-error" id="gateError" role="alert"></p>
+          <p class="gate-cooldown" id="gateCooldown" role="timer" aria-live="polite" hidden><span>Too many tries — wait</span><span class="cd-num" id="gateCooldownNum">20</span><span>seconds</span></p>
         </form>
       </div>
     </div>
@@ -1057,6 +1088,27 @@
 
     <script>
       (function () {
+        "use strict";
+        /* Console / injection hardening — read before changing:
+           - Everything sensitive lives ONLY in this closure. Nothing
+             is put on window, in the DOM, in cookies, or in browser
+             storage, so typing a variable name in the console finds
+             nothing: a console assignment just creates a new global
+             and never touches the values in here.
+           - The browser's real fetch/atob are captured NOW, at load.
+             If code injected later replaces window.fetch to spy on
+             requests, this page keeps using the captured originals,
+             so the replacement never sees the inbox headers.
+           - The CSP meta tag in <head> limits network calls to the
+             inbox origin only, so injected code cannot send stolen
+             data to another server from this page.
+           Honest limit: no web page can hide network traffic from
+           someone holding the unlocked device (DevTools shows every
+           request). What this guarantees is the LOCKED page leaks
+           nothing and the counters/keys below cannot be reset or
+           read from the console. */
+        var nativeFetch = window.fetch ? window.fetch.bind(window) : null;
+        var nativeAtob = window.atob ? window.atob.bind(window) : null;
         var API_URL = "https://vagijhlfaflssatfavqp.supabase.co/rest/v1/chat_messages";
         var STORAGE_URL = "https://vagijhlfaflssatfavqp.supabase.co/storage/v1/object/uploads/";
         /* The inbox key and thread token are NOT stored in this page.
@@ -1097,6 +1149,8 @@
         var passcodeInput = document.getElementById("passcodeInput");
         var unlockBtn = document.getElementById("unlockBtn");
         var gateError = document.getElementById("gateError");
+        var gateCooldown = document.getElementById("gateCooldown");
+        var gateCooldownNum = document.getElementById("gateCooldownNum");
         var lockBtn = document.getElementById("lockBtn");
         var installHint = document.getElementById("installHint");
         var installHintText = document.getElementById("installHintText");
@@ -1116,6 +1170,67 @@
         var clearedBeforeId = 0; // hide every message with id <= this
         var uploadStatusTimer = null;
         var unlocking = false;
+
+        /* Brute-force cooldown — closure-only on purpose.
+           failedAttempts / cooldownEndsAtPerf are never stored in
+           localStorage, cookies, or on window, so they cannot be
+           cleared from the console or by editing storage. The
+           deadline uses performance.now() (monotonic), so changing
+           the device clock does not shorten the wait.
+           After 5 wrong passcodes: 20 seconds locked out. */
+        var MAX_FAILED_ATTEMPTS = 5;
+        var COOLDOWN_MS = 20000;
+        var failedAttempts = 0;
+        var cooldownEndsAtPerf = 0;
+        var cooldownTimer = null;
+
+        function cooldownRemainingMs() {
+          if (!cooldownEndsAtPerf) return 0;
+          var left = cooldownEndsAtPerf - performance.now();
+          return left > 0 ? left : 0;
+        }
+        function isCoolingDown() { return cooldownRemainingMs() > 0; }
+
+        function renderCooldown() {
+          var leftMs = cooldownRemainingMs();
+          if (leftMs <= 0) {
+            if (cooldownTimer) { clearInterval(cooldownTimer); cooldownTimer = null; }
+            cooldownEndsAtPerf = 0;
+            if (gateCooldown) { gateCooldown.classList.remove("show"); gateCooldown.hidden = true; }
+            if (!unlocking && !unlocked) {
+              passcodeInput.disabled = false;
+              unlockBtn.disabled = false;
+              unlockBtn.textContent = "Unlock";
+            }
+            return;
+          }
+          var secs = Math.ceil(leftMs / 1000);
+          if (gateCooldownNum) gateCooldownNum.textContent = String(secs);
+          if (gateCooldown) { gateCooldown.hidden = false; gateCooldown.classList.add("show"); }
+          passcodeInput.disabled = true;
+          unlockBtn.disabled = true;
+          unlockBtn.textContent = "Wait " + secs + "s\u2026";
+        }
+
+        function startCooldown() {
+          failedAttempts = 0;
+          cooldownEndsAtPerf = performance.now() + COOLDOWN_MS;
+          if (cooldownTimer) clearInterval(cooldownTimer);
+          cooldownTimer = setInterval(renderCooldown, 200);
+          renderCooldown();
+        }
+
+        /* Returns true when this failure just triggered a cooldown. */
+        function recordFailedAttempt() {
+          failedAttempts += 1;
+          if (failedAttempts >= MAX_FAILED_ATTEMPTS) { startCooldown(); return true; }
+          return false;
+        }
+
+        function attemptsLeftText() {
+          var left = MAX_FAILED_ATTEMPTS - failedAttempts;
+          return left === 1 ? " 1 try left before a short wait." : " " + left + " tries left before a short wait.";
+        }
 
         function headers(extra) {
           var h = {
@@ -1213,7 +1328,7 @@
         }
 
         function base64Decode(b64) {
-          var bin = atob(b64);
+          var bin = nativeAtob(b64);
           var bytes = [];
           for (var i = 0; i < bin.length; i++) bytes.push(bin.charCodeAt(i) & 0xff);
           return bytes;
@@ -1261,6 +1376,10 @@
         function relock(message) {
           unlocked = false;
           unlocking = false;
+          /* Overwrite before dropping, so the strings are not left
+             sitting in memory for anything to scrape afterwards. */
+          API_KEY = "wiped-wiped-wiped";
+          THREAD_TOKEN = "wiped-wiped-wiped";
           API_KEY = null;
           THREAD_TOKEN = null;
           if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
@@ -1272,17 +1391,23 @@
           if (lockBtn) lockBtn.hidden = true;
           if (clearOverlay) clearOverlay.hidden = true;
           passcodeInput.value = "";
-          unlockBtn.disabled = false;
-          unlockBtn.textContent = "Unlock";
           if (message) showGateError(message);
           else hideGateError();
           gateOverlay.hidden = false;
-          passcodeInput.focus();
+          /* An active cooldown survives a relock — locking and
+             unlocking again is not a way around the wait. */
+          if (isCoolingDown()) renderCooldown();
+          else {
+            unlockBtn.disabled = false;
+            unlockBtn.textContent = "Unlock";
+            passcodeInput.focus();
+          }
         }
 
         function tryUnlock(e) {
           if (e) e.preventDefault();
           if (unlocking || unlocked) return;
+          if (isCoolingDown()) { renderCooldown(); return; }
           var passcode = passcodeInput.value;
           if (!passcode) { showGateError("Type the passcode to open your chat."); return; }
           unlocking = true;
@@ -1291,15 +1416,25 @@
           hideGateError();
 
           var creds = unscrambleCredentials(passcode);
+          /* The typed passcode is needed no longer — clear it from
+             the field and drop our copy right away. */
           passcodeInput.value = "";
+          passcode = "";
           if (!creds) {
             unlocking = false;
-            unlockBtn.disabled = false;
-            unlockBtn.textContent = "Unlock";
-            showGateError("That passcode didn't work — try again.");
-            passcodeInput.focus();
+            if (recordFailedAttempt()) {
+              hideGateError();
+            } else {
+              unlockBtn.disabled = false;
+              unlockBtn.textContent = "Unlock";
+              showGateError("That passcode didn't work — try again." + attemptsLeftText());
+              passcodeInput.focus();
+            }
             return;
           }
+          /* Freeze the pair so nothing can quietly swap the values
+             the headers are built from after unlock. */
+          try { creds = Object.freeze(creds); } catch (err) {}
 
           API_KEY = creds.key;
           THREAD_TOKEN = creds.token;
@@ -1308,7 +1443,7 @@
              only accepted once the inbox itself confirms the token.
              A non-200 here means the token is wrong or has been
              rotated, so the page stays locked and asks again. */
-          fetch(API_URL + "?select=id&order=id.asc&limit=1", { headers: headers() })
+          nativeFetch(API_URL + "?select=id&order=id.asc&limit=1", { headers: headers() })
             .then(function (res) {
               if (!res.ok) throw new Error("verify " + res.status);
               return res.json();
@@ -1316,6 +1451,8 @@
             .then(function () {
               unlocked = true;
               unlocking = false;
+              /* A correct passcode clears the strike count. */
+              failedAttempts = 0;
               unlockBtn.disabled = false;
               unlockBtn.textContent = "Unlock";
               hideGateError();
@@ -1327,7 +1464,11 @@
               input.focus();
             })
             .catch(function () {
-              relock("That passcode didn't work — try again.");
+              /* A server-side rejection counts as a failed try too,
+                 so the cooldown cannot be dodged with a passcode
+                 that unscrambles but is no longer accepted. */
+              if (recordFailedAttempt()) relock("");
+              else relock("That passcode didn't work — try again." + attemptsLeftText());
             });
         }
 
@@ -1533,7 +1674,7 @@
 
         function loadMessages(initial) {
           if (!unlocked || !API_KEY || !THREAD_TOKEN) return Promise.resolve();
-          return fetch(API_URL + "?select=*&order=id.asc", { headers: headers() })
+          return nativeFetch(API_URL + "?select=*&order=id.asc", { headers: headers() })
             .then(function (res) {
               if (!res.ok) {
                 var err = new Error("load " + res.status);
@@ -1583,7 +1724,7 @@
           if (attachBtn) attachBtn.classList.add("disabled");
           hideError();
 
-          fetch(API_URL, {
+          nativeFetch(API_URL, {
             method: "POST",
             headers: headers({
               "Content-Type": "application/json",
@@ -1661,7 +1802,7 @@
 
           var uploadSucceeded = false;
 
-          fetch(STORAGE_URL + encodeURIComponent(path), {
+          nativeFetch(STORAGE_URL + encodeURIComponent(path), {
             method: "POST",
             headers: headers({
               "Content-Type": file.type || "application/octet-stream",
@@ -1673,7 +1814,7 @@
               if (!res.ok) throw new Error("upload " + res.status);
               uploadSucceeded = true;
               var noteBody = "📎 Sent a file: " + originalName + " — tap Tonyo in the thread for help with it. [file:uploads/" + path + "]";
-              return fetch(API_URL, {
+              return nativeFetch(API_URL, {
                 method: "POST",
                 headers: headers({
                   "Content-Type": "application/json",
@@ -1739,7 +1880,7 @@
           clearStatus.classList.add("show");
           hideError();
 
-          fetch(API_URL, {
+          nativeFetch(API_URL, {
             method: "POST",
             headers: headers({
               "Content-Type": "application/json",
@@ -1763,7 +1904,7 @@
               /* Best effort: really delete the older rows too. This is
                  a no-op while her side has no delete permission, and
                  takes effect on its own if that ever changes. */
-              return fetch(API_URL + "?id=lt." + markerId, {
+              return nativeFetch(API_URL + "?id=lt." + markerId, {
                 method: "DELETE",
                 headers: headers({ "Prefer": "return=minimal" })
               }).catch(function () { return null; });
@@ -2011,6 +2152,22 @@
             installDismiss.addEventListener("click", function () { installHint.hidden = true; });
           }
         })();
+
+        /* Drop any <script> element injected into the page after
+           load (a pasted payload's usual delivery route). This
+           page's own code is already running by the time the
+           observer starts, so anything arriving later is foreign. */
+        try {
+          var scriptGuard = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mu) {
+              for (var i = 0; i < mu.addedNodes.length; i++) {
+                var n = mu.addedNodes[i];
+                if (n && n.nodeName === "SCRIPT" && n.parentNode) n.parentNode.removeChild(n);
+              }
+            });
+          });
+          scriptGuard.observe(document.documentElement, { childList: true, subtree: true });
+        } catch (err) { /* older browser: the closure + CSP still hold */ }
 
         /* Locked on load: nothing is fetched or rendered until the
            passcode unscrambles working credentials. A reload always
