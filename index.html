@@ -785,13 +785,6 @@
       .send-btn:active:not(:disabled) { transform: scale(0.97); }
       .send-btn:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
 
-      .hint {
-        font-size: 11.5px;
-        color: var(--ink-soft);
-        text-align: center;
-        margin: var(--space-2) 0 0;
-      }
-
       /* ---------- Clear-chat confirmation ---------- */
       .clear-overlay {
         position: fixed;
@@ -1090,7 +1083,6 @@
         .attach-btn { width: 48px; height: 48px; }
         textarea { padding: 12px 14px; border-radius: 22px; }
         .send-btn { min-width: 68px; padding: 12px 18px; font-size: 15px; }
-        .hint { font-size: 11px; margin-top: var(--space-2); }
         .error-note { font-size: 12.5px; padding: 8px 10px; }
       }
 
@@ -1115,7 +1107,6 @@
         h1 { font-size: 18px; margin: 0; }
         main { padding-top: 10px; padding-bottom: 6px; }
         footer { padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
-        .hint { display: none; }
         textarea { max-height: 72px; }
       }
 
@@ -1240,7 +1231,6 @@
           <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
           <button class="send-btn" id="sendBtn" type="submit">Send</button>
         </form>
-        <p class="hint">Files wait here until you tap Send — add a message to go with them if you like. Sent files are removed after 12 hours.</p>
       </div>
     </footer>
 
