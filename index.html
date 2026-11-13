@@ -130,6 +130,43 @@
         box-shadow: 0 0 0 3px rgba(125, 143, 116, 0.18);
       }
 
+      .header-actions {
+        margin-left: auto;
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+      .header-actions .status { margin-left: 0; }
+
+      .clear-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--rose-deep);
+        background: var(--paper);
+        border: 1.5px solid var(--blush);
+        border-radius: 999px;
+        padding: 8px 14px;
+        min-height: 44px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .clear-btn svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
+      .clear-btn:hover:not(:disabled) { background: var(--rose-soft); border-color: var(--rose); }
+      .clear-btn:active:not(:disabled) { transform: scale(0.97); }
+      .clear-btn:disabled { opacity: 0.45; cursor: default; }
+
       /* ---------- Chat thread ---------- */
       main {
         flex: 1 1 auto;
@@ -399,6 +436,94 @@
         margin: 8px 0 0;
       }
 
+      /* ---------- Clear-chat confirmation ---------- */
+      .clear-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(74, 50, 48, 0.45);
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        padding-left: max(20px, env(safe-area-inset-left, 0px));
+        padding-right: max(20px, env(safe-area-inset-right, 0px));
+      }
+
+      .clear-overlay[hidden] { display: none !important; }
+
+      .clear-dialog {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 18px 44px rgba(74, 50, 48, 0.22);
+        padding: 22px;
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .clear-dialog h2 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--rose-deep);
+        margin: 0 0 8px;
+      }
+
+      .clear-dialog p {
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: var(--ink);
+        margin: 0;
+      }
+
+      .clear-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .clear-cancel,
+      .clear-confirm {
+        flex: 1 1 0;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 12px 14px;
+        min-height: 48px;
+        cursor: pointer;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .clear-cancel {
+        color: var(--ink);
+        background: var(--cream);
+        border: 1.5px solid var(--line);
+      }
+
+      .clear-confirm {
+        color: #fff;
+        background: var(--rose);
+        border: none;
+        box-shadow: 0 6px 16px rgba(196, 81, 95, 0.28);
+      }
+
+      .clear-cancel:active:not(:disabled),
+      .clear-confirm:active:not(:disabled) { transform: scale(0.97); }
+      .clear-cancel:disabled,
+      .clear-confirm:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
+
+      .clear-status {
+        display: none;
+        font-size: 13px !important;
+        color: var(--rose-deep) !important;
+        margin-top: 12px !important;
+      }
+
+      .clear-status.show { display: block; }
+
       /* ---------- Mobile optimisation ---------- */
       @media (max-width: 640px) {
         header {
@@ -418,6 +543,8 @@
         .status { padding-top: 0; }
         .status span.txt { display: none; }
         .status .dot { width: 9px; height: 9px; }
+        .header-actions { gap: 6px; }
+        .clear-btn { font-size: 12.5px; padding: 8px 12px; }
 
         main { padding: 14px 10px 8px; }
         .thread { gap: 10px; }
@@ -476,9 +603,14 @@
         <div class="monogram" aria-hidden="true">T</div>
         <div>
           <h1>Ask Tonyo</h1>
-          <p class="subtitle">Tonyo made this little corner just for you. Ask anything — homework, advice, or just someone to talk to. Replies come from Jett, his AI assistant, usually within a few minutes.</p>
         </div>
-        <div class="status" aria-hidden="true"><span class="dot"></span><span class="txt">here for you</span></div>
+        <div class="header-actions">
+          <div class="status" aria-hidden="true"><span class="dot"></span><span class="txt">here for you</span></div>
+          <button class="clear-btn" id="clearBtn" type="button" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            Clear chat
+          </button>
+        </div>
       </div>
     </header>
 
@@ -507,6 +639,18 @@
       </div>
     </footer>
 
+    <div class="clear-overlay" id="clearOverlay" hidden>
+      <div class="clear-dialog" role="alertdialog" aria-modal="true" aria-labelledby="clearTitle" aria-describedby="clearDesc">
+        <h2 id="clearTitle">Clear this chat?</h2>
+        <p id="clearDesc">All the messages showing in this thread will be cleared away, and you'll start fresh with an empty chat. This can't be undone.</p>
+        <div class="clear-actions">
+          <button class="clear-cancel" id="clearCancel" type="button">Keep chat</button>
+          <button class="clear-confirm" id="clearConfirm" type="button">Clear chat</button>
+        </div>
+        <p class="clear-status" id="clearStatus" role="alert"></p>
+      </div>
+    </div>
+
     <script>
       (function () {
         var API_URL = "https://vagijhlfaflssatfavqp.supabase.co/rest/v1/chat_messages";
@@ -529,10 +673,24 @@
         var uploadStatus = document.getElementById("uploadStatus");
         var attachBtn = document.getElementById("attachBtn");
         var fileInput = document.getElementById("fileInput");
+        var clearBtn = document.getElementById("clearBtn");
+        var clearOverlay = document.getElementById("clearOverlay");
+        var clearCancel = document.getElementById("clearCancel");
+        var clearConfirm = document.getElementById("clearConfirm");
+        var clearStatus = document.getElementById("clearStatus");
+
+        /* Her side of the inbox can read and post, but not delete — so
+           clearing posts a hidden marker message instead. Everything at
+           or before the latest marker stays hidden, on every load. The
+           page also tries a real DELETE of the older rows, which takes
+           effect if delete permission is ever granted to her side. */
+        var CLEAR_MARKER = "[clear-chat]";
 
         var seen = {};       // id -> true, so polling never duplicates a bubble
         var sending = false;
         var uploading = false;
+        var clearing = false;
+        var clearedBeforeId = 0; // hide every message with id <= this
         var uploadStatusTimer = null;
 
         function headers(extra) {
@@ -616,9 +774,54 @@
           scroller.scrollTop = scroller.scrollHeight;
         }
 
+        function isClearMarker(m) {
+          return !!m && typeof m.body === "string" && m.body.trim() === CLEAR_MARKER;
+        }
+
+        function updateClearBtn() {
+          if (!clearBtn) return;
+          clearBtn.disabled = clearing || sending || uploading || !thread.querySelector(".msg");
+        }
+
+        function showEmptyState() {
+          if (emptyState) return;
+          var el = document.createElement("div");
+          el.className = "empty";
+          el.id = "emptyState";
+          var mark = document.createElement("div");
+          mark.className = "omark";
+          mark.setAttribute("aria-hidden", "true");
+          mark.textContent = "“";
+          var p = document.createElement("p");
+          p.appendChild(document.createTextNode("No messages yet — say "));
+          var strong = document.createElement("strong");
+          strong.textContent = "hi";
+          p.appendChild(strong);
+          p.appendChild(document.createTextNode(" and ask away. Tonyo reads everything, and Jett will reply right here."));
+          el.appendChild(mark);
+          el.appendChild(p);
+          thread.appendChild(el);
+          emptyState = el;
+        }
+
+        /* Drop every rendered bubble at or before the clear boundary,
+           and bring back the empty state if nothing visible remains. */
+        function purgeClearedMessages() {
+          var nodes = thread.querySelectorAll(".msg");
+          for (var i = 0; i < nodes.length; i++) {
+            var mid = parseInt(nodes[i].getAttribute("data-id") || "0", 10);
+            if (mid && mid <= clearedBeforeId) nodes[i].parentNode.removeChild(nodes[i]);
+          }
+          if (!thread.querySelector(".msg")) showEmptyState();
+          updateClearBtn();
+        }
+
         function addMessage(m, animate) {
           if (seen[m.id]) return;
           seen[m.id] = true;
+
+          /* Clear markers and anything they cleared never render. */
+          if (isClearMarker(m) || m.id <= clearedBeforeId) { updateClearBtn(); return; }
 
           if (emptyState && emptyState.parentNode) {
             emptyState.parentNode.removeChild(emptyState);
@@ -626,6 +829,7 @@
           }
 
           var wrap = document.createElement("div");
+          wrap.setAttribute("data-id", String(m.id));
           wrap.className = "msg " + (m.sender === "her" ? "her" : "jett") + (animate ? " appear" : "");
 
           var who = document.createElement("div");
@@ -679,6 +883,7 @@
           wrap.appendChild(bubble);
           if (when.textContent) wrap.appendChild(when);
           thread.appendChild(wrap);
+          updateClearBtn();
         }
 
         function loadMessages(initial) {
@@ -689,10 +894,18 @@
             })
             .then(function (rows) {
               var wasNear = nearBottom();
+              /* The latest clear marker wins: raise the boundary first,
+                 so nothing it cleared flashes on screen, then purge
+                 anything already rendered at or before it. */
+              rows.forEach(function (m) {
+                if (isClearMarker(m) && m.id > clearedBeforeId) clearedBeforeId = m.id;
+              });
+              if (clearedBeforeId) purgeClearedMessages();
               var hadNew = false;
               rows.forEach(function (m) {
                 if (!seen[m.id]) { addMessage(m, !initial); hadNew = true; }
               });
+              updateClearBtn();
               if (initial || (hadNew && wasNear)) scrollToBottom();
             })
             .catch(function () {
@@ -707,7 +920,7 @@
 
         function send() {
           var text = input.value.trim();
-          if (!text || sending || uploading) return;
+          if (!text || sending || uploading || clearing) return;
           sending = true;
           sendBtn.disabled = true;
           if (attachBtn) attachBtn.classList.add("disabled");
@@ -741,12 +954,13 @@
               sending = false;
               sendBtn.disabled = uploading ? true : false;
               if (attachBtn && !uploading) attachBtn.classList.remove("disabled");
+              updateClearBtn();
               input.focus();
             });
         }
 
         function handleUpload(file) {
-          if (!file || uploading || sending) return;
+          if (!file || uploading || sending || clearing) return;
 
           hideError();
           hideUploadStatus();
@@ -828,8 +1042,92 @@
               form.classList.remove("is-uploading");
               if (attachBtn) attachBtn.classList.remove("disabled");
               sendBtn.disabled = sending ? true : false;
+              updateClearBtn();
             });
         }
+
+        /* ---------- Clear chat ---------- */
+        function openClearDialog() {
+          if (clearing || sending || uploading) return;
+          if (!thread.querySelector(".msg")) return;
+          clearStatus.classList.remove("show");
+          clearStatus.textContent = "";
+          clearOverlay.hidden = false;
+          if (clearConfirm) clearConfirm.focus();
+        }
+
+        function closeClearDialog() {
+          if (clearing) return;
+          clearOverlay.hidden = true;
+          if (clearBtn) clearBtn.focus();
+        }
+
+        function doClear() {
+          if (clearing) return;
+          clearing = true;
+          updateClearBtn();
+          clearCancel.disabled = true;
+          clearConfirm.disabled = true;
+          clearStatus.textContent = "Clearing…";
+          clearStatus.classList.add("show");
+          hideError();
+
+          fetch(API_URL, {
+            method: "POST",
+            headers: headers({
+              "Content-Type": "application/json",
+              "Prefer": "return=representation"
+            }),
+            body: JSON.stringify({ sender: "her", body: CLEAR_MARKER })
+          })
+            .then(function (res) {
+              if (!res.ok) throw new Error("clear " + res.status);
+              return res.json();
+            })
+            .then(function (rows) {
+              if (!rows || !rows.length || !rows[0].id) throw new Error("clear marker missing");
+              var markerId = rows[0].id;
+              clearedBeforeId = markerId;
+              seen[markerId] = true;
+              /* Best effort: really delete the older rows too. This is
+                 a no-op while her side has no delete permission, and
+                 takes effect on its own if that ever changes. */
+              return fetch(API_URL + "?id=lt." + markerId, {
+                method: "DELETE",
+                headers: headers({ "Prefer": "return=minimal" })
+              }).catch(function () { return null; });
+            })
+            .then(function () {
+              purgeClearedMessages();
+              clearing = false;
+              clearCancel.disabled = false;
+              clearConfirm.disabled = false;
+              clearOverlay.hidden = true;
+              updateClearBtn();
+              showUploadStatus("Chat cleared — fresh thread, ready when you are.", true);
+              if (input) input.focus();
+            })
+            .catch(function () {
+              clearing = false;
+              clearCancel.disabled = false;
+              clearConfirm.disabled = false;
+              clearStatus.textContent = "Couldn't clear — check your connection and try again.";
+              clearStatus.classList.add("show");
+              updateClearBtn();
+            });
+        }
+
+        if (clearBtn) clearBtn.addEventListener("click", openClearDialog);
+        if (clearCancel) clearCancel.addEventListener("click", closeClearDialog);
+        if (clearConfirm) clearConfirm.addEventListener("click", doClear);
+        if (clearOverlay) {
+          clearOverlay.addEventListener("click", function (e) {
+            if (e.target === clearOverlay) closeClearDialog();
+          });
+        }
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && clearOverlay && !clearOverlay.hidden) closeClearDialog();
+        });
 
         form.addEventListener("submit", function (e) {
           e.preventDefault();
