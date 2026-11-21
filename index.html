@@ -756,7 +756,14 @@
         max-height: 120px;
         outline: none;
         overflow-y: auto;
+        /* Hide the scrollbar — the text still scrolls inside the box
+           when a long message grows past max-height, the grey bar
+           just isn't drawn. */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
       }
+
+      textarea::-webkit-scrollbar { display: none; }
 
       textarea:focus { border-color: var(--rose); }
       textarea::placeholder { color: var(--ink-soft); }
