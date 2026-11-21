@@ -1023,8 +1023,9 @@
 
       .gate-note strong { color: var(--rose-deep); font-weight: 600; }
 
-      /* ---------- Lock button ---------- */
-      .lock-btn {
+      /* ---------- Lock + History buttons ---------- */
+      .lock-btn,
+      .history-btn {
         display: grid;
         place-items: center;
         width: 44px;
@@ -1045,9 +1046,157 @@
       }
 
       .lock-btn[hidden] { display: none !important; }
-      .lock-btn svg { width: 17px; height: 17px; display: block; flex: 0 0 auto; }
-      .lock-btn:hover { background: var(--cream); border-color: var(--blush); }
-      .lock-btn:active { transform: scale(0.97); }
+      .lock-btn svg, .history-btn svg { width: 17px; height: 17px; display: block; flex: 0 0 auto; }
+      .lock-btn:hover, .history-btn:hover { background: var(--cream); border-color: var(--blush); }
+      .lock-btn:active, .history-btn:active { transform: scale(0.97); }
+
+      /* ---------- History ---------- */
+      .history-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        background:
+          radial-gradient(560px 380px at 110% -60px, rgba(232, 96, 110, 0.10), rgba(232, 96, 110, 0) 70%),
+          radial-gradient(480px 320px at -80px 108%, rgba(125, 143, 116, 0.12), rgba(125, 143, 116, 0) 70%),
+          var(--cream);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .history-overlay[hidden] { display: none !important; }
+
+      .history-panel {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        max-width: 780px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .history-head {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: calc(var(--space-4) + env(safe-area-inset-top, 0px)) max(var(--space-4), env(safe-area-inset-right, 0px)) var(--space-3) max(var(--space-4), env(safe-area-inset-left, 0px));
+      }
+
+      .history-head h2 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--rose-deep);
+        margin: 0;
+      }
+
+      .history-close {
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        padding: 0;
+        display: grid;
+        place-items: center;
+        font: inherit;
+        font-size: 20px;
+        line-height: 1;
+        color: var(--rose-deep);
+        background: var(--paper);
+        border: 1.5px solid var(--blush);
+        border-radius: 50%;
+        cursor: pointer;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .history-close:active { transform: scale(0.96); }
+
+      .history-list {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: var(--space-2) max(var(--space-4), env(safe-area-inset-right, 0px)) calc(var(--space-5) + env(safe-area-inset-bottom, 0px)) max(var(--space-4), env(safe-area-inset-left, 0px));
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .history-empty {
+        text-align: center;
+        margin: auto 0;
+        padding: var(--space-6) var(--space-5);
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--ink-soft);
+      }
+
+      .history-session {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .history-session-head {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        background: transparent;
+        border: none;
+        padding: 14px 16px;
+        font: inherit;
+        text-align: left;
+        color: var(--ink);
+        cursor: pointer;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .history-session-head:hover { background: var(--cream); }
+
+      .history-session-texts {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .history-session-date { font-size: 15.5px; font-weight: 600; color: var(--ink); }
+      .history-session-meta { font-size: 13px; color: var(--ink-soft); }
+
+      .history-chevron {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+        color: var(--ink-soft);
+        transition: transform 0.15s ease;
+      }
+
+      .history-session-head[aria-expanded="true"] .history-chevron { transform: rotate(180deg); }
+
+      .history-session-body {
+        border-top: 1px solid var(--line);
+        background: var(--cream);
+        padding: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+
+      .history-session-body[hidden] { display: none !important; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .history-chevron { transition: none; }
+      }
 
       /* ---------- Mobile optimisation ---------- */
       @media (max-width: 640px) {
@@ -1187,6 +1336,9 @@
           <p class="subtitle">Tonyo made this little corner just for you.</p>
         </div>
         <div class="header-actions">
+          <button class="history-btn" id="historyBtn" type="button" aria-label="History" title="History">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+          </button>
           <button class="clear-btn" id="clearBtn" type="button" disabled aria-label="Clear chat" title="Clear chat">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
           </button>
@@ -1267,6 +1419,16 @@
       </div>
     </div>
 
+    <div class="history-overlay" id="historyOverlay" hidden>
+      <div class="history-panel" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+        <div class="history-head">
+          <h2 id="historyTitle">History</h2>
+          <button class="history-close" id="historyClose" type="button" aria-label="Close history" title="Close">×</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+
     <script>
       (function () {
         "use strict";
@@ -1344,6 +1506,10 @@
         var gateCooldown = document.getElementById("gateCooldown");
         var gateCooldownNum = document.getElementById("gateCooldownNum");
         var lockBtn = document.getElementById("lockBtn");
+        var historyBtn = document.getElementById("historyBtn");
+        var historyOverlay = document.getElementById("historyOverlay");
+        var historyList = document.getElementById("historyList");
+        var historyClose = document.getElementById("historyClose");
         var installHint = document.getElementById("installHint");
         var installHintText = document.getElementById("installHintText");
         var installDismiss = document.getElementById("installDismiss");
@@ -1364,6 +1530,8 @@
         var uploading = false;
         var clearing = false;
         var clearedBeforeId = 0; // hide every message with id <= this
+        var allRows = [];        // latest full fetch, cleared segments included — History reads from this
+        var expandedSessions = {}; // history session key (first message id) -> true, so polls keep it open
         var uploadStatusTimer = null;
         var unlocking = false;
 
@@ -1547,6 +1715,9 @@
           showEmptyState();
           if (lockBtn) lockBtn.hidden = true;
           if (clearOverlay) clearOverlay.hidden = true;
+          if (historyOverlay) historyOverlay.hidden = true;
+          allRows = [];
+          expandedSessions = {};
           passcodeInput.value = "";
           if (message) showGateError(message);
           else hideGateError();
@@ -1827,19 +1998,171 @@
           updateClearBtn();
         }
 
-        function addMessage(m, animate) {
-          if (seen[m.id]) return;
-          seen[m.id] = true;
+        /* ---------- History ----------
+           Past conversations are the segments of the inbox split by
+           the [clear-chat] markers: everything she cleared is still
+           in the data, grouped by those markers. The segment after
+           the last marker is the live conversation and is NOT part
+           of History. Marker messages themselves are never shown. */
+        var dateFmt = new Intl.DateTimeFormat("en-PH", {
+          timeZone: "Asia/Manila",
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        });
 
-          /* Clear markers and anything they cleared never render. */
-          if (isClearMarker(m) || m.id <= clearedBeforeId) { updateClearBtn(); return; }
+        var timeOnlyFmt = new Intl.DateTimeFormat("en-PH", {
+          timeZone: "Asia/Manila",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true
+        });
 
-          /* A real reply from Tonyo ends the wait. */
-          if (m.sender !== "her") hideTyping();
+        function buildSessions(rows) {
+          var sessions = [];
+          var current = [];
+          (rows || []).forEach(function (m) {
+            if (isClearMarker(m)) {
+              if (current.length) { sessions.push(current); current = []; }
+            } else {
+              current.push(m);
+            }
+          });
+          /* `current` — the not-yet-cleared conversation — stays in
+             the main chat view only, so it is dropped here. */
+          sessions.reverse(); // newest first
+          return sessions;
+        }
 
-          if (emptyState && emptyState.parentNode) {
-            emptyState.parentNode.removeChild(emptyState);
-            emptyState = null;
+        function sessionRangeText(first, last) {
+          var fd = new Date(first.created_at);
+          var ld = new Date(last.created_at);
+          if (isNaN(fd.getTime()) || isNaN(ld.getTime())) return "";
+          if (first.id === last.id) return timeOnlyFmt.format(fd);
+          if (dateFmt.format(fd) === dateFmt.format(ld)) {
+            return timeOnlyFmt.format(fd) + " \u2013 " + timeOnlyFmt.format(ld);
+          }
+          return formatTime(first.created_at) + " \u2013 " + formatTime(last.created_at);
+        }
+
+        function renderHistory() {
+          if (!historyList) return;
+          while (historyList.firstChild) historyList.removeChild(historyList.firstChild);
+          var sessions = buildSessions(allRows);
+          if (!sessions.length) {
+            var empty = document.createElement("div");
+            empty.className = "history-empty";
+            empty.textContent = "Nothing here yet. When you clear a chat, that conversation is saved here \u2014 so you can reread it anytime.";
+            historyList.appendChild(empty);
+            return;
+          }
+          sessions.forEach(function (session) {
+            var key = String(session[0].id);
+            var first = session[0];
+            var last = session[session.length - 1];
+            var expanded = !!expandedSessions[key];
+
+            var item = document.createElement("div");
+            item.className = "history-session";
+
+            var head = document.createElement("button");
+            head.type = "button";
+            head.className = "history-session-head";
+            head.setAttribute("aria-expanded", expanded ? "true" : "false");
+
+            var texts = document.createElement("span");
+            texts.className = "history-session-texts";
+            var dateEl = document.createElement("span");
+            dateEl.className = "history-session-date";
+            var firstDate = new Date(first.created_at);
+            dateEl.textContent = isNaN(firstDate.getTime()) ? "Earlier conversation" : dateFmt.format(firstDate);
+            var metaEl = document.createElement("span");
+            metaEl.className = "history-session-meta";
+            var metaParts = [];
+            var range = sessionRangeText(first, last);
+            if (range) metaParts.push(range);
+            metaParts.push(session.length + (session.length === 1 ? " message" : " messages"));
+            metaEl.textContent = metaParts.join(" \u00B7 ");
+            texts.appendChild(dateEl);
+            texts.appendChild(metaEl);
+            head.appendChild(texts);
+
+            var svgNS = "http://www.w3.org/2000/svg";
+            var chev = document.createElementNS(svgNS, "svg");
+            chev.setAttribute("class", "history-chevron");
+            chev.setAttribute("viewBox", "0 0 24 24");
+            chev.setAttribute("fill", "none");
+            chev.setAttribute("stroke", "currentColor");
+            chev.setAttribute("stroke-width", "2");
+            chev.setAttribute("stroke-linecap", "round");
+            chev.setAttribute("stroke-linejoin", "round");
+            chev.setAttribute("aria-hidden", "true");
+            var chevPath = document.createElementNS(svgNS, "path");
+            chevPath.setAttribute("d", "m6 9 6 6 6-6");
+            chev.appendChild(chevPath);
+            head.appendChild(chev);
+
+            var body = document.createElement("div");
+            body.className = "history-session-body";
+            body.hidden = !expanded;
+            session.forEach(function (m) { addMessage(m, false, body); });
+
+            head.addEventListener("click", function () {
+              var nowExpanded = body.hidden;
+              body.hidden = !nowExpanded;
+              head.setAttribute("aria-expanded", nowExpanded ? "true" : "false");
+              if (nowExpanded) expandedSessions[key] = true;
+              else delete expandedSessions[key];
+            });
+
+            item.appendChild(head);
+            item.appendChild(body);
+            historyList.appendChild(item);
+          });
+        }
+
+        function openHistory() {
+          if (!unlocked || !historyOverlay) return;
+          renderHistory();
+          historyOverlay.hidden = false;
+          if (historyClose) historyClose.focus();
+        }
+
+        function closeHistory() {
+          if (!historyOverlay) return;
+          historyOverlay.hidden = true;
+          if (historyBtn) historyBtn.focus();
+        }
+
+        if (historyBtn) historyBtn.addEventListener("click", openHistory);
+        if (historyClose) historyClose.addEventListener("click", closeHistory);
+        if (historyOverlay) {
+          historyOverlay.addEventListener("click", function (e) {
+            if (e.target === historyOverlay) closeHistory();
+          });
+        }
+
+        /* Renders one message bubble. With no target it goes into
+           the live thread (dedup, clear boundary, typing indicator
+           all apply). With a target — a History session body — the
+           same bubble is rendered read-only into that container,
+           bypassing the live-thread rules, since history messages
+           are exactly the ones the clear boundary hides. */
+        function addMessage(m, animate, target) {
+          if (!target) {
+            if (seen[m.id]) return;
+            seen[m.id] = true;
+
+            /* Clear markers and anything they cleared never render. */
+            if (isClearMarker(m) || m.id <= clearedBeforeId) { updateClearBtn(); return; }
+
+            /* A real reply from Tonyo ends the wait. */
+            if (m.sender !== "her") hideTyping();
+
+            if (emptyState && emptyState.parentNode) {
+              emptyState.parentNode.removeChild(emptyState);
+              emptyState = null;
+            }
           }
 
           var wrap = document.createElement("div");
@@ -1946,8 +2269,8 @@
           wrap.appendChild(who);
           wrap.appendChild(bubble);
           if (when.textContent) wrap.appendChild(when);
-          thread.appendChild(wrap);
-          updateClearBtn();
+          if (target) target.appendChild(wrap);
+          else { thread.appendChild(wrap); updateClearBtn(); }
         }
 
         function loadMessages(initial) {
@@ -1962,6 +2285,7 @@
               return res.json();
             })
             .then(function (rows) {
+              allRows = rows;
               var wasNear = nearBottom();
               /* The latest clear marker wins: raise the boundary first,
                  so nothing it cleared flashes on screen, then purge
@@ -1981,6 +2305,8 @@
                  never flickers back on after its timeout. */
               if (initial) syncTypingWithThread();
               updateClearBtn();
+              /* Keep an open History panel current with the latest fetch. */
+              if (historyOverlay && !historyOverlay.hidden) renderHistory();
               if (initial || (hadNew && wasNear)) scrollToBottom();
               if (typingEl && wasNear) scrollToBottom();
             })
@@ -2369,7 +2695,9 @@
           });
         }
         document.addEventListener("keydown", function (e) {
-          if (e.key === "Escape" && clearOverlay && !clearOverlay.hidden) closeClearDialog();
+          if (e.key !== "Escape") return;
+          if (clearOverlay && !clearOverlay.hidden) closeClearDialog();
+          else if (historyOverlay && !historyOverlay.hidden) closeHistory();
         });
 
         /* Suggestion chips (empty state only): tapping one drops its
@@ -2483,6 +2811,7 @@
         function ptrActive() {
           return unlocked && !ptrRefreshing &&
             (!clearOverlay || clearOverlay.hidden) &&
+            (!historyOverlay || historyOverlay.hidden) &&
             (!gateOverlay || gateOverlay.hidden);
         }
 
