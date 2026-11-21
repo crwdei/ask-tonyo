@@ -493,6 +493,17 @@
         white-space: nowrap;
       }
 
+      /* Working indicator reuses the typing bubble's look; only the
+         label differs — a status line can be a full sentence, so it
+         wraps instead of forcing one long nowrap line off-screen. */
+      .typing-row.working-row .typing-text {
+        white-space: normal;
+        line-height: 1.35;
+        overflow-wrap: break-word;
+      }
+
+      .typing-row.working-row .typing-bubble { max-width: 100%; }
+
       .typing-dots {
         display: inline-flex;
         align-items: center;
@@ -1523,9 +1534,23 @@
            effect if delete permission is ever granted to her side. */
         var CLEAR_MARKER = "[clear-chat]";
 
+        /* Working status signals: a message from Tonyo (sender
+           'jett') whose body starts with "[working]" is not a chat
+           message at all — it means a longer job (building a file,
+           reading uploads) is under way. The text after the prefix
+           is a short status label and may be empty. Signals are
+           never rendered as bubbles and never counted in History;
+           the newest one drives the working indicator below. */
+        var WORKING_PREFIX = "[working]";
+        var WORKING_STALE_MS = 20 * 60 * 1000; // 20 minutes
+
         var seen = {};       // id -> true, so polling never duplicates a bubble
         var typingEl = null;
         var typingTimer = null;
+        var workingEl = null;
+        var workingLabelEl = null;
+        var workingTimer = null;   // stale failsafe for the working indicator
+        var workingSignalId = null;
         var stagedFiles = []; // picked files waiting for Send — nothing uploads before that
         var MAX_STAGED_FILES = 5;
         var sending = false;
@@ -1712,6 +1737,7 @@
           var nodes = thread.querySelectorAll(".msg");
           for (var i = nodes.length - 1; i >= 0; i--) nodes[i].parentNode.removeChild(nodes[i]);
           hideTyping();
+          hideWorking();
           stagedFiles = [];
           renderStaged();
           showEmptyState();
@@ -1920,6 +1946,11 @@
           bubble.appendChild(dots);
           row.appendChild(who);
           row.appendChild(bubble);
+          /* While the working indicator is up it carries the wait,
+             so the typing bubble stays in place but hidden — its
+             own 2-minute timer keeps running untouched, and
+             hideWorking() unhides it if it is still alive then. */
+          if (workingEl && workingEl.parentNode === thread) row.style.display = "none";
           thread.appendChild(row);
           typingEl = row;
           scrollToBottom();
@@ -1929,6 +1960,124 @@
           if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
           if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
           typingEl = null;
+        }
+
+        /* ---------- Working indicator ----------
+           The persistent companion to the typing indicator above,
+           for jobs that take minutes instead of seconds. It looks
+           exactly like the typing bubble — same row, same dots —
+           but carries the signal's status label, and it stays up
+           for as long as the newest [working] signal is the latest
+           word from Tonyo and less than 20 minutes old. It is a
+           separate element, never a .msg, so the clear-chat count
+           and purge logic ignore it just like the typing row. It
+           hides when a real reply from Tonyo lands after the
+           signal, when the signal disappears from the inbox (the
+           worker deleted it — the next poll sees it gone), or when
+           the signal goes stale, so a worker that died mid-task
+           never leaves it spinning forever. */
+        function computeWorkingState(rows) {
+          var newestSignal = null;
+          var newestReal = null;
+          (rows || []).forEach(function (m) {
+            if (!m) return;
+            /* Signals from a cleared conversation are history, not
+               a live job — the clear boundary hides them too. */
+            if (clearedBeforeId && m.id <= clearedBeforeId) return;
+            if (isWorkingSignal(m)) { newestSignal = m; return; }
+            if (m.sender === "jett" && !isClearMarker(m)) {
+              if (!newestReal || m.id > newestReal.id) newestReal = m;
+            }
+          });
+          if (!newestSignal) return null;
+          /* A real reply after the signal ends the wait. */
+          if (newestReal && newestReal.id > newestSignal.id) return null;
+          var t = new Date(newestSignal.created_at).getTime();
+          if (!isNaN(t)) {
+            if (Date.now() - t >= WORKING_STALE_MS) return null;
+            return { signal: newestSignal, label: workingLabel(newestSignal), expiresAt: t + WORKING_STALE_MS };
+          }
+          /* No usable timestamp: trust the ordering alone, with no
+             stale deadline to schedule. */
+          return { signal: newestSignal, label: workingLabel(newestSignal), expiresAt: 0 };
+        }
+
+        function showWorking(label, signalId, expiresAt) {
+          /* (Re)schedule the stale failsafe first, so a label-only
+             update still moves the deadline to the newest signal. */
+          if (workingTimer) { clearTimeout(workingTimer); workingTimer = null; }
+          if (expiresAt) {
+            var delay = expiresAt - Date.now();
+            if (delay > 0) {
+              workingTimer = setTimeout(function () { syncWorkingIndicator(allRows); }, delay + 60);
+            }
+          }
+          var text = label ? label : "Tonyo is working\u2026";
+          if (workingEl && workingEl.parentNode === thread) {
+            if (workingSignalId !== signalId || (workingLabelEl && workingLabelEl.textContent !== text)) {
+              if (workingLabelEl) workingLabelEl.textContent = text;
+              workingEl.setAttribute("aria-label", text);
+              workingSignalId = signalId;
+            }
+            return;
+          }
+          if (emptyState && emptyState.parentNode) {
+            emptyState.parentNode.removeChild(emptyState);
+            emptyState = null;
+          }
+          var row = document.createElement("div");
+          row.className = "typing-row working-row";
+          row.setAttribute("role", "status");
+          row.setAttribute("aria-label", text);
+          var who = document.createElement("div");
+          who.className = "who";
+          who.textContent = "Tonyo";
+          var bubble = document.createElement("div");
+          bubble.className = "typing-bubble";
+          var labelEl = document.createElement("span");
+          labelEl.className = "typing-text";
+          labelEl.textContent = text;
+          var dots = document.createElement("span");
+          dots.className = "typing-dots";
+          dots.setAttribute("aria-hidden", "true");
+          for (var i = 0; i < 3; i++) dots.appendChild(document.createElement("span"));
+          bubble.appendChild(labelEl);
+          bubble.appendChild(dots);
+          row.appendChild(who);
+          row.appendChild(bubble);
+          /* The working bubble carries the wait on its own, so the
+             typing bubble (if one is up) steps aside until this
+             hides again — see showTyping / hideWorking. */
+          if (typingEl) typingEl.style.display = "none";
+          thread.appendChild(row);
+          workingEl = row;
+          workingLabelEl = labelEl;
+          workingSignalId = signalId;
+          scrollToBottom();
+        }
+
+        function hideWorking() {
+          if (workingTimer) { clearTimeout(workingTimer); workingTimer = null; }
+          var had = !!workingEl;
+          if (workingEl && workingEl.parentNode) workingEl.parentNode.removeChild(workingEl);
+          workingEl = null;
+          workingLabelEl = null;
+          workingSignalId = null;
+          /* Give the typing bubble its place back, if its own
+             timer hasn't already taken it away. */
+          if (typingEl) typingEl.style.display = "";
+          if (had && !thread.querySelector(".msg")) showEmptyState();
+        }
+
+        /* Recompute the working state from the latest full fetch.
+           Runs on every poll, so a signal that was deleted, a real
+           reply that landed after it, a fresher signal with a new
+           label, and a signal crossing the 20-minute line are all
+           picked up without any extra wiring. */
+        function syncWorkingIndicator(rows) {
+          var state = computeWorkingState(rows);
+          if (!state) { hideWorking(); return; }
+          showWorking(state.label, state.signal.id, state.expiresAt);
         }
 
         /* After a load, the indicator should reflect reality:
@@ -1944,6 +2093,18 @@
 
         function isClearMarker(m) {
           return !!m && typeof m.body === "string" && m.body.trim() === CLEAR_MARKER;
+        }
+
+        function isWorkingSignal(m) {
+          return !!m && m.sender === "jett" && typeof m.body === "string" &&
+            m.body.indexOf(WORKING_PREFIX) === 0;
+        }
+
+        /* The status label carried by a signal: whatever follows
+           the "[working]" prefix, trimmed. May be "". */
+        function workingLabel(m) {
+          if (!isWorkingSignal(m)) return "";
+          return m.body.slice(WORKING_PREFIX.length).trim();
         }
 
         function updateClearBtn() {
@@ -1996,7 +2157,7 @@
             var mid = parseInt(nodes[i].getAttribute("data-id") || "0", 10);
             if (mid && mid <= clearedBeforeId) nodes[i].parentNode.removeChild(nodes[i]);
           }
-          if (!thread.querySelector(".msg")) { hideTyping(); showEmptyState(); }
+          if (!thread.querySelector(".msg")) { hideTyping(); hideWorking(); showEmptyState(); }
           updateClearBtn();
         }
 
@@ -2026,6 +2187,10 @@
           (rows || []).forEach(function (m) {
             if (isClearMarker(m)) {
               if (current.length) { sessions.push(current); current = []; }
+            } else if (isWorkingSignal(m)) {
+              /* Status signals are not chat messages: they are
+                 never shown inside a session and never counted in
+                 its message count. */
             } else {
               current.push(m);
             }
@@ -2151,6 +2316,14 @@
            bypassing the live-thread rules, since history messages
            are exactly the ones the clear boundary hides. */
         function addMessage(m, animate, target) {
+          /* A [working] signal is never a bubble — not in the live
+             thread, not in History. It is only marked seen (so the
+             poll loop counts it as handled) and otherwise ignored
+             here; syncWorkingIndicator() reads it from the rows. */
+          if (isWorkingSignal(m)) {
+            if (!target) { seen[m.id] = true; updateClearBtn(); }
+            return;
+          }
           if (!target) {
             if (seen[m.id]) return;
             seen[m.id] = true;
@@ -2305,12 +2478,17 @@
                  her message is the last one. Later polls are left
                  to addMessage / the send path, so the indicator
                  never flickers back on after its timeout. */
+              /* The working indicator is recomputed on every fetch,
+                 not just the first: that is what makes a deleted
+                 signal, a fresher label, and the 20-minute stale
+                 line all take effect on their own. */
+              syncWorkingIndicator(rows);
               if (initial) syncTypingWithThread();
               updateClearBtn();
               /* Keep an open History panel current with the latest fetch. */
               if (historyOverlay && !historyOverlay.hidden) renderHistory();
               if (initial || (hadNew && wasNear)) scrollToBottom();
-              if (typingEl && wasNear) scrollToBottom();
+              if ((typingEl || workingEl) && wasNear) scrollToBottom();
             })
             .catch(function (err) {
               /* If the inbox rejects the credentials in memory, fail
