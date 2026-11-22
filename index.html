@@ -749,6 +749,45 @@
       .mic-btn:active { transform: scale(0.97); }
       .mic-btn svg { width: 20px; height: 20px; display: block; }
 
+      /* Dictation language chip: compact pill next to the mic
+         button, matching the composer's small controls. Hidden
+         in markup and revealed by JS only together with the mic
+         button when speech recognition is supported. */
+      .mic-lang-chip {
+        flex: 0 0 auto;
+        align-self: center;
+        height: 36px;
+        min-height: 36px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: var(--cream);
+        border: 1.5px solid var(--line);
+        color: var(--rose-deep);
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 600;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .mic-lang-chip[hidden] { display: none !important; }
+      .mic-lang-chip:hover { background: var(--rose-soft); border-color: var(--blush); }
+      .mic-lang-chip:active { transform: scale(0.97); }
+
+      .composer.is-uploading .mic-lang-chip {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: default;
+      }
+
       /* Listening state: solid rose with a soft pulsing ring, so it
          is obvious the mic is live until she taps it off. */
       .mic-btn.is-listening {
@@ -1378,6 +1417,7 @@
         footer { padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
         .composer { gap: var(--space-2); }
         .attach-btn { width: 48px; height: 48px; }
+        .mic-lang-chip { height: 34px; min-height: 34px; padding: 0 8px; font-size: 12px; }
         textarea { padding: 12px 14px; border-radius: 22px; }
         .send-btn { min-width: 68px; padding: 12px 18px; font-size: 15px; }
         .error-note { font-size: 12.5px; padding: 8px 10px; }
@@ -1530,6 +1570,7 @@
           <button class="mic-btn" id="micBtn" type="button" hidden aria-label="Voice typing — tap and speak" aria-pressed="false" title="Voice typing">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
           </button>
+          <button class="mic-lang-chip" id="micLangBtn" type="button" hidden aria-label="Dictation language: Bisaya — tap to change" title="Dictation language">Bisaya</button>
           <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
           <button class="send-btn" id="sendBtn" type="submit">Send</button>
         </form>
@@ -1637,6 +1678,7 @@
         var attachBtn = document.getElementById("attachBtn");
         var fileInput = document.getElementById("fileInput");
         var micBtn = document.getElementById("micBtn");
+        var micLangBtn = document.getElementById("micLangBtn");
         var micNote = document.getElementById("micNote");
         var clearBtn = document.getElementById("clearBtn");
         var clearOverlay = document.getElementById("clearOverlay");
@@ -3130,12 +3172,75 @@
         var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
         var micWanted = false;   // she tapped it on and hasn't tapped it off
         var micRec = null;       // the live recognition instance, if any
-        var micLang = "fil-PH";  // first choice; en-US if unsupported
-        var micLangFellBack = false;
+        /* Dictation language chain: a recognition session listens
+           in ONE language, so the default order is Cebuano first,
+           then Filipino, then English — on a
+           'language-not-supported' error the next in the chain is
+           tried, the same mid-startup fallback the old fil→en
+           chain used. A manual chip choice (below) wins over this
+           auto chain as the starting language until she changes
+           it again, and is remembered in localStorage. */
+        var MIC_LANG_CHAIN = ["ceb-PH", "fil-PH", "en-US"];
+        var MIC_LANG_LABELS = { "ceb-PH": "Bisaya", "fil-PH": "Tagalog", "en-US": "English" };
+        var MIC_LANG_STORAGE_KEY = "ask-tonyo-mic-lang";
+        var micLang = "ceb-PH";  // first choice in the auto chain
+        var micLangManual = false;
+        try {
+          var savedMicLang = window.localStorage ? window.localStorage.getItem(MIC_LANG_STORAGE_KEY) : null;
+          if (savedMicLang && MIC_LANG_CHAIN.indexOf(savedMicLang) !== -1) {
+            micLang = savedMicLang;
+            micLangManual = true;
+          }
+        } catch (e) { /* storage unavailable: session-only choice still works */ }
         var micBase = "";        // draft text the live session builds on
         var micFinals = "";      // finalised words from the live instance
         var micNoteTimer = null;
         var MIC_PLACEHOLDER = input.getAttribute("placeholder") || "Type your message…";
+
+        function micLangLabel(code) {
+          return MIC_LANG_LABELS[code] || "Bisaya";
+        }
+
+        function updateMicLangChip() {
+          if (!micLangBtn) return;
+          var label = micLangLabel(micLang);
+          micLangBtn.textContent = label;
+          micLangBtn.setAttribute("aria-label", "Dictation language: " + label + " — tap to change");
+        }
+
+        /* Set the effective dictation language. A manual choice
+           is persisted so the page remembers it next visit; an
+           automatic fallback move is not persisted over a manual
+           choice she already made. */
+        function setMicLang(code, manual) {
+          if (MIC_LANG_CHAIN.indexOf(code) === -1) return;
+          micLang = code;
+          if (manual) {
+            micLangManual = true;
+            try {
+              if (window.localStorage) window.localStorage.setItem(MIC_LANG_STORAGE_KEY, code);
+            } catch (e) { /* keep the in-memory choice for this session */ }
+          }
+          updateMicLangChip();
+        }
+
+        /* Cycle Bisaya → Tagalog → English → Bisaya. Mid-dictation,
+           stopping the live instance lets its onend fold committed
+           words into micBase and auto-restart — and the restart
+           builds a fresh instance with the newly chosen language,
+           so already-dictated text stays in the box. */
+        function cycleMicLang() {
+          var idx = MIC_LANG_CHAIN.indexOf(micLang);
+          if (idx === -1) idx = 0;
+          var next = MIC_LANG_CHAIN[(idx + 1) % MIC_LANG_CHAIN.length];
+          setMicLang(next, true);
+          if (micWanted && micRec) {
+            try { micRec.stop(); } catch (err) {}
+          }
+          /* If micWanted is true but micRec is momentarily null
+             (between Android auto-restarts), the pending restart
+             picks up the new micLang on its own. */
+        }
 
         function showMicNote(text) {
           if (!micNote) return;
@@ -3241,11 +3346,19 @@
           };
           rec.onerror = function (event) {
             var code = event && event.error ? event.error : "";
-            if (code === "language-not-supported" && !micLangFellBack) {
-              /* Filipino isn't offered here — quietly retry in
-                 English; the onend below restarts with en-US. */
-              micLangFellBack = true;
-              micLang = "en-US";
+            if (code === "language-not-supported") {
+              /* Current language isn't offered here — quietly move
+                 to the next in the chain (ceb-PH → fil-PH → en-US);
+                 the onend below restarts with that language. The
+                 move is not persisted over a manual chip choice. */
+              var langIdx = MIC_LANG_CHAIN.indexOf(micLang);
+              if (langIdx !== -1 && langIdx < MIC_LANG_CHAIN.length - 1) {
+                micLang = MIC_LANG_CHAIN[langIdx + 1];
+                updateMicLangChip();
+                return;
+              }
+              micWanted = false;
+              showMicNote("Voice typing is not available in this browser — open this page in Chrome to use it.");
               return;
             }
             if (code === "not-allowed") {
@@ -3326,6 +3439,18 @@
             if (uploading || sending) return;
             if (micWanted) stopDictation();
             else startDictation();
+          });
+        }
+
+        if (micLangBtn && SpeechRecognitionCtor) {
+          /* The language chip is revealed together with the mic
+             button, and stays hidden with it when speech
+             recognition is unsupported. */
+          updateMicLangChip();
+          micLangBtn.hidden = false;
+          micLangBtn.addEventListener("click", function () {
+            if (uploading || sending) return;
+            cycleMicLang();
           });
         }
 
