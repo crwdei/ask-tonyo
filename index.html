@@ -614,6 +614,22 @@
       .upload-status.show { display: block; }
       .upload-status.success { color: #4a5d43; background: #eef3ec; border-color: #cfdcc9; }
 
+      /* Brief friendly note for voice-typing hiccups (mic permission
+         denied, recognizer unavailable) — same quiet look as the
+         upload status, on its own element so the two never fight. */
+      .mic-note {
+        display: none;
+        font-size: 13px;
+        color: var(--ink-soft);
+        background: var(--cream);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 12px;
+        margin-bottom: 10px;
+      }
+
+      .mic-note.show { display: block; }
+
       /* ---------- Staged attachments (waiting for Send) ---------- */
       .staged-files {
         display: flex;
@@ -704,6 +720,62 @@
       .attach-btn:hover { background: var(--rose-soft); border-color: var(--blush); }
       .attach-btn:active { transform: scale(0.97); }
       .attach-btn svg { width: 20px; height: 20px; display: block; }
+
+      /* Voice-typing button: same round icon-button look as Attach.
+         It stays hidden in the markup and JS only reveals it when
+         the browser actually offers speech recognition, so on an
+         unsupported browser the composer looks exactly as before. */
+      .mic-btn {
+        flex: 0 0 auto;
+        width: 48px;
+        height: 48px;
+        min-height: 48px;
+        padding: 0;
+        border-radius: 50%;
+        background: var(--cream);
+        border: 1.5px solid var(--line);
+        color: var(--rose-deep);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .mic-btn[hidden] { display: none !important; }
+      .mic-btn:hover { background: var(--rose-soft); border-color: var(--blush); }
+      .mic-btn:active { transform: scale(0.97); }
+      .mic-btn svg { width: 20px; height: 20px; display: block; }
+
+      /* Listening state: solid rose with a soft pulsing ring, so it
+         is obvious the mic is live until she taps it off. */
+      .mic-btn.is-listening {
+        background: var(--rose);
+        border-color: var(--rose);
+        color: #fff;
+        animation: mic-pulse 1.6s ease-out infinite;
+      }
+
+      .mic-btn.is-listening:hover { background: var(--rose-deep); border-color: var(--rose-deep); }
+
+      @keyframes mic-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(196, 81, 95, 0.40); }
+        70% { box-shadow: 0 0 0 10px rgba(196, 81, 95, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(196, 81, 95, 0); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .mic-btn.is-listening { animation: none; }
+      }
+
+      .composer.is-uploading .mic-btn,
+      .mic-btn.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: default;
+      }
 
       .composer.is-uploading .attach-btn,
       .attach-btn.disabled {
@@ -1447,6 +1519,7 @@
     <footer>
       <div class="composer-wrap">
         <div class="upload-status" id="uploadStatus" role="status" aria-live="polite"></div>
+        <div class="mic-note" id="micNote" role="status" aria-live="polite"></div>
         <div class="error-note" id="errorNote" role="alert">Couldn't send — check your connection and try again.</div>
         <div class="staged-files" id="stagedFiles" hidden aria-label="Files ready to send"></div>
         <form class="composer" id="composer">
@@ -1454,6 +1527,9 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
           <input class="file-input-hidden" type="file" id="fileInput" multiple tabindex="-1" aria-hidden="true" accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv" />
+          <button class="mic-btn" id="micBtn" type="button" hidden aria-label="Voice typing — tap and speak" aria-pressed="false" title="Voice typing">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          </button>
           <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
           <button class="send-btn" id="sendBtn" type="submit">Send</button>
         </form>
@@ -1560,6 +1636,8 @@
         var stagedFilesEl = document.getElementById("stagedFiles");
         var attachBtn = document.getElementById("attachBtn");
         var fileInput = document.getElementById("fileInput");
+        var micBtn = document.getElementById("micBtn");
+        var micNote = document.getElementById("micNote");
         var clearBtn = document.getElementById("clearBtn");
         var clearOverlay = document.getElementById("clearOverlay");
         var clearCancel = document.getElementById("clearCancel");
@@ -1823,6 +1901,7 @@
            and whenever the inbox rejects the credentials in memory —
            fail closed: a bad token re-prompts instead of half-working. */
         function relock(message) {
+          stopDictation();
           unlocked = false;
           unlocking = false;
           /* Overwrite before dropping, so the strings are not left
@@ -2611,6 +2690,10 @@
           var text = input.value.trim();
           if (sending || uploading || clearing || !unlocked) return;
           if (!text && !stagedFiles.length) return;
+          /* Sending ends any live dictation — the words on screen
+             (including a phrase still being recognised) are what
+             goes out, and the mic never keeps running afterwards. */
+          stopDictation();
           /* Files staged in the composer go out together with
              whatever she typed, as one message. */
           if (stagedFiles.length) { sendWithFiles(text); return; }
@@ -3030,6 +3113,178 @@
           attachBtn.addEventListener("click", function (e) {
             if (uploading || sending) { e.preventDefault(); return; }
             if (fileInput) fileInput.click();
+          });
+        }
+
+        /* ---------- Voice dictation ----------
+           The mic button dictates into the message box using the
+           browser's own speech recognition (Web Speech API) —
+           nothing is recorded or uploaded by this page, and nothing
+           is ever auto-sent: words land in the textarea as a draft
+           she can read, fix, and send herself. Dictation APPENDS to
+           whatever she already typed, so it doubles as the
+           instruction text when files are staged.
+           Support: Chrome on Android/desktop offers it; browsers
+           without it keep the button hidden and the composer is
+           exactly as it was. */
+        var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var micWanted = false;   // she tapped it on and hasn't tapped it off
+        var micRec = null;       // the live recognition instance, if any
+        var micLang = "fil-PH";  // first choice; en-US if unsupported
+        var micLangFellBack = false;
+        var micBase = "";        // draft text the live session builds on
+        var micFinals = "";      // finalised words from the live instance
+        var micNoteTimer = null;
+        var MIC_PLACEHOLDER = input.getAttribute("placeholder") || "Type your message…";
+
+        function showMicNote(text) {
+          if (!micNote) return;
+          if (micNoteTimer) { clearTimeout(micNoteTimer); micNoteTimer = null; }
+          micNote.textContent = text;
+          micNote.classList.add("show");
+          micNoteTimer = setTimeout(hideMicNote, 6000);
+        }
+
+        function hideMicNote() {
+          if (micNoteTimer) { clearTimeout(micNoteTimer); micNoteTimer = null; }
+          if (!micNote) return;
+          micNote.classList.remove("show");
+          micNote.textContent = "";
+        }
+
+        /* Join two pieces of text with exactly one space when both
+           sides need one — dictated chunks never glue onto the word
+           before them and never double the spaces. */
+        function joinText(base, add) {
+          if (!add) return base || "";
+          if (!base) return add;
+          var needsSpace = !/\s$/.test(base) && !/^\s/.test(add);
+          return base + (needsSpace ? " " : "") + add;
+        }
+
+        function renderDictation(interim) {
+          input.value = joinText(joinText(micBase, micFinals), interim || "");
+          autosize();
+        }
+
+        function setMicUI() {
+          if (micBtn) {
+            micBtn.classList.toggle("is-listening", micWanted);
+            micBtn.setAttribute("aria-pressed", micWanted ? "true" : "false");
+            micBtn.setAttribute("aria-label", micWanted ? "Stop voice typing" : "Voice typing — tap and speak");
+          }
+          input.setAttribute("placeholder", micWanted ? "Listening… speak now" : MIC_PLACEHOLDER);
+        }
+
+        function createRecognition() {
+          var rec = new SpeechRecognitionCtor();
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.lang = micLang;
+          rec.onresult = function (event) {
+            /* Rebuild from the instance's full result list every
+               time: finals stay final, the interim tail is replaced
+               — so live words show as she speaks but never
+               duplicate once they settle. */
+            var finals = "";
+            var interim = "";
+            for (var i = 0; i < event.results.length; i++) {
+              var res = event.results[i];
+              var t = res[0] ? res[0].transcript : "";
+              if (!t) continue;
+              if (res.isFinal) finals = joinText(finals, t);
+              else interim = joinText(interim, t);
+            }
+            micFinals = finals;
+            renderDictation(interim);
+          };
+          rec.onerror = function (event) {
+            var code = event && event.error ? event.error : "";
+            if (code === "language-not-supported" && !micLangFellBack) {
+              /* Filipino isn't offered here — quietly retry in
+                 English; the onend below restarts with en-US. */
+              micLangFellBack = true;
+              micLang = "en-US";
+              return;
+            }
+            if (code === "not-allowed") {
+              micWanted = false;
+              showMicNote("Voice typing needs mic permission — allow the microphone for this page, then tap the mic again.");
+            } else if (code === "service-not-allowed") {
+              micWanted = false;
+              showMicNote("Voice typing is not available in this browser — open this page in Chrome to use it.");
+            } else if (code === "audio-capture") {
+              micWanted = false;
+              showMicNote("No microphone found — voice typing can't start.");
+            } else if (code === "network") {
+              micWanted = false;
+              showMicNote("Voice typing needs an internet connection — check your connection and try again.");
+            }
+            /* "no-speech" and "aborted" need no note: onend either
+               restarts (still toggled on) or settles quietly. */
+          };
+          rec.onend = function () {
+            /* Fold this instance's final words into the base before
+               any restart: a fresh instance starts with an empty
+               result list, so without this the words would vanish
+               or repeat. */
+            micBase = joinText(micBase, micFinals);
+            micFinals = "";
+            micRec = null;
+            if (micWanted) {
+              /* Android Chrome stops after a pause even in
+                 continuous mode — if she hasn't tapped stop, start
+                 again so she can keep talking. */
+              setTimeout(function () { if (micWanted && !micRec) startRecognition(); }, 120);
+            } else {
+              setMicUI();
+            }
+          };
+          return rec;
+        }
+
+        function startRecognition() {
+          if (!SpeechRecognitionCtor || micRec) return;
+          try {
+            micRec = createRecognition();
+            micRec.start();
+          } catch (err) {
+            micRec = null;
+            micWanted = false;
+            setMicUI();
+            showMicNote("Voice typing is not available in this browser — open this page in Chrome to use it.");
+          }
+        }
+
+        function startDictation() {
+          hideMicNote();
+          micBase = input.value;
+          micFinals = "";
+          micWanted = true;
+          setMicUI();
+          startRecognition();
+        }
+
+        /* Function declaration (hoisted) so send() and relock() —
+           defined earlier in this file — can stop a live dictation
+           too. Whatever is on screen stays as the draft. */
+        function stopDictation() {
+          if (!micWanted && !micRec) { setMicUI(); return; }
+          micWanted = false;
+          setMicUI();
+          if (micRec) {
+            try { micRec.stop(); } catch (err) {}
+          }
+        }
+
+        if (micBtn && SpeechRecognitionCtor) {
+          /* Supported: reveal the button. Unsupported browsers never
+             see it and the composer is unchanged. */
+          micBtn.hidden = false;
+          micBtn.addEventListener("click", function () {
+            if (uploading || sending) return;
+            if (micWanted) stopDictation();
+            else startDictation();
           });
         }
 
