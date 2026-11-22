@@ -3178,24 +3178,65 @@
 
         function createRecognition() {
           var rec = new SpeechRecognitionCtor();
-          rec.continuous = true;
+          var isAndroid = /Android/i.test(navigator.userAgent || "");
+          rec.continuous = !isAndroid;
           rec.interimResults = true;
           rec.lang = micLang;
+          /* Append-once state for THIS instance only. A fresh
+             instance (including the onend auto-restart on Android)
+             starts with an empty processed index and no previous
+             chunk, and micFinals is reset by onend when the prior
+             instance folds into micBase — so restarts append only
+             their own new finals and never replay old ones. */
+          var processedIndex = 0;
+          var lastCommittedChunk = "";
           rec.onresult = function (event) {
-            /* Rebuild from the instance's full result list every
-               time: finals stay final, the interim tail is replaced
-               — so live words show as she speaks but never
-               duplicate once they settle. */
-            var finals = "";
             var interim = "";
-            for (var i = 0; i < event.results.length; i++) {
+            var startIdx = (typeof event.resultIndex === "number") ? event.resultIndex : 0;
+            if (startIdx < processedIndex) startIdx = processedIndex;
+            for (var i = startIdx; i < event.results.length; i++) {
+              if (i < processedIndex) continue;
               var res = event.results[i];
               var t = res[0] ? res[0].transcript : "";
-              if (!t) continue;
-              if (res.isFinal) finals = joinText(finals, t);
-              else interim = joinText(interim, t);
+              if (res.isFinal) {
+                processedIndex = i + 1;
+                var chunk = t ? t.trim() : "";
+                /* (a) empty / whitespace only — skip. */
+                if (!chunk) continue;
+                /* (d) exactly the immediately previous chunk — skip. */
+                if (lastCommittedChunk && chunk === lastCommittedChunk) continue;
+                var committed = joinText(micBase, micFinals).trim();
+                /* (c) Android replay: the new final starts with the
+                   whole committed text — append only the remainder. */
+                if (committed && chunk.length > committed.length && chunk.indexOf(committed) === 0) {
+                  var remFull = chunk.slice(committed.length).trim();
+                  if (!remFull) continue;
+                  micFinals = joinText(micFinals, remFull);
+                  lastCommittedChunk = chunk;
+                  interim = "";
+                  continue;
+                }
+                /* (c) Android replay: the new final starts with the
+                   last committed chunk — append only the remainder. */
+                if (lastCommittedChunk && chunk.length > lastCommittedChunk.length && chunk.indexOf(lastCommittedChunk) === 0) {
+                  var remLast = chunk.slice(lastCommittedChunk.length).trim();
+                  if (!remLast) continue;
+                  micFinals = joinText(micFinals, remLast);
+                  lastCommittedChunk = chunk;
+                  interim = "";
+                  continue;
+                }
+                /* (b) committed text already ends with this chunk — skip. */
+                if (committed && committed.slice(-chunk.length) === chunk) continue;
+                micFinals = joinText(micFinals, chunk);
+                lastCommittedChunk = chunk;
+                interim = "";
+              } else {
+                /* Interim: only the LATEST interim entry is the live
+                   tail — replace, never concatenate. */
+                interim = t || "";
+              }
             }
-            micFinals = finals;
             renderDictation(interim);
           };
           rec.onerror = function (event) {
