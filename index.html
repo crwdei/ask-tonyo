@@ -198,9 +198,15 @@
         background: var(--cream-deep);
         border-bottom: 1px solid var(--line);
         padding: var(--space-2) max(var(--space-4), env(safe-area-inset-right, 0px)) var(--space-2) max(var(--space-4), env(safe-area-inset-left, 0px));
+        transition: opacity 0.4s ease;
       }
 
       .install-hint[hidden] { display: none !important; }
+      .install-hint.is-fading { opacity: 0; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .install-hint { transition: none; }
+      }
 
       .install-hint-inner {
         max-width: 680px;
@@ -1068,6 +1074,10 @@
       .history-overlay {
         position: fixed;
         inset: 0;
+        height: 100vh; /* fallback */
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
         z-index: 55;
         background:
           radial-gradient(560px 380px at 110% -60px, rgba(232, 96, 110, 0.10), rgba(232, 96, 110, 0) 70%),
@@ -1082,6 +1092,9 @@
       .history-panel {
         flex: 1 1 auto;
         min-height: 0;
+        height: 100%;
+        max-height: 100%;
+        overflow: hidden;
         width: 100%;
         max-width: 780px;
         margin: 0 auto;
@@ -1133,7 +1146,10 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
         padding: var(--space-2) max(var(--space-4), env(safe-area-inset-right, 0px)) calc(var(--space-5) + env(safe-area-inset-bottom, 0px)) max(var(--space-4), env(safe-area-inset-left, 0px));
         display: flex;
         flex-direction: column;
@@ -1149,7 +1165,16 @@
         color: var(--ink-soft);
       }
 
+      /* flex-shrink must stay 0: as a flex item of .history-list, a
+         session that can shrink gets squeezed to the list's visible
+         height instead of overflowing it, and its overflow:hidden
+         then clips the expanded conversation with no way to scroll
+         to the rest. Keeping its natural height makes the LIST the
+         scroller, so every message in an expanded session is
+         reachable on phone and desktop alike. */
       .history-session {
+        flex: 0 0 auto;
+        width: 100%;
         background: var(--paper);
         border: 1px solid var(--line);
         border-radius: 16px;
@@ -1205,6 +1230,12 @@
         flex-direction: column;
         gap: var(--space-4);
       }
+
+      /* Same shrink guard for the messages inside an expanded
+         session: bubbles keep their natural height and the list
+         scrolls past them, instead of the bubbles being compressed
+         or clipped inside the card. */
+      .history-session-body .msg { flex: 0 0 auto; }
 
       .history-session-body[hidden] { display: none !important; }
 
@@ -3097,9 +3128,22 @@
               : "Tap the browser menu (\u22EE), then \u201CAdd to Home screen\u201D — it opens full-screen, like an app."));
           }
           installHint.hidden = false;
-          if (installDismiss) {
-            installDismiss.addEventListener("click", function () { installHint.hidden = true; });
+          var installHintTimer = null;
+          var installHintFadeTimer = null;
+          function hideInstallHint() {
+            if (installHintTimer) { clearTimeout(installHintTimer); installHintTimer = null; }
+            if (installHintFadeTimer) { clearTimeout(installHintFadeTimer); installHintFadeTimer = null; }
+            var reduceMotion = false;
+            try { reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { reduceMotion = false; }
+            if (reduceMotion) { installHint.hidden = true; return; }
+            installHint.classList.add("is-fading");
+            installHintFadeTimer = setTimeout(function () { installHint.hidden = true; installHint.classList.remove("is-fading"); }, 400);
           }
+          if (installDismiss) {
+            installDismiss.addEventListener("click", hideInstallHint);
+          }
+          /* Auto-dismiss after 20 seconds so the tip doesn't linger. */
+          installHintTimer = setTimeout(hideInstallHint, 20000);
         })();
 
         /* Drop any <script> element injected into the page after
