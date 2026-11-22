@@ -970,6 +970,18 @@
 
       .gate-form input:focus { border-color: var(--rose); }
 
+      /* If a browser autofills the passcode anyway, keep the filled
+         field in the page's own colours instead of Chrome's blue/yellow
+         autofill wash, so the gate never looks pre-filled. */
+      .gate-form input:-webkit-autofill,
+      .gate-form input:-webkit-autofill:hover,
+      .gate-form input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px var(--cream) inset;
+        box-shadow: 0 0 0 1000px var(--cream) inset;
+        -webkit-text-fill-color: var(--ink);
+        caret-color: var(--ink);
+      }
+
       .gate-btn {
         width: 100%;
         margin-top: 12px;
@@ -1442,8 +1454,8 @@
         <div class="monogram" aria-hidden="true">T</div>
         <h2 id="gateTitle">This corner is just for you</h2>
         <p id="gateDesc">It's locked with a passcode now, so your chats stay between you and Tonyo. Type the passcode to open your chat.</p>
-        <form class="gate-form" id="gateForm">
-          <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" inputmode="numeric" pattern="[0-9]*" />
+        <form class="gate-form" id="gateForm" autocomplete="off">
+          <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" inputmode="numeric" pattern="[0-9]*" readonly data-lpignore="true" data-1p-ignore="true" data-bwignore="true" />
           <button class="gate-btn" id="unlockBtn" type="submit">Unlock</button>
           <p class="gate-error" id="gateError" role="alert"></p>
           <p class="gate-cooldown" id="gateCooldown" role="timer" aria-live="polite" hidden><span>Too many tries — wait</span><span class="cd-num" id="gateCooldownNum">20</span><span>seconds</span></p>
@@ -1557,6 +1569,52 @@
         var installHint = document.getElementById("installHint");
         var installHintText = document.getElementById("installHintText");
         var installDismiss = document.getElementById("installDismiss");
+
+        /* ---------- Passcode autofill guard ----------
+           Chrome (and other browsers) treat this field as a saved
+           login because it is type="password", so on refresh they
+           refill the passcode on their own — the page itself stores
+           nothing. Defences, layered so at least one holds per
+           browser:
+           - autocomplete="off" on the form and field (changed from
+             "current-password", which explicitly invited autofill);
+           - the field starts out readonly in the markup, and
+             browsers do not autofill readonly fields — the first
+             real tap, click, Tab-focus or keypress removes it;
+           - the value is cleared on load, on pageshow (back/forward
+             cache and form-value restoration on refresh), and on a
+             short timer, in case autofill lands after this script
+             runs. Timed clears stop as soon as she interacts, so
+             they can never wipe a passcode she is typing. */
+        var passcodeTouched = false;
+        function enablePasscodeInput() {
+          passcodeTouched = true;
+          if (passcodeInput && passcodeInput.hasAttribute("readonly")) passcodeInput.removeAttribute("readonly");
+        }
+        function clearAutofilledPasscode() {
+          if (passcodeTouched || unlocked) return;
+          if (passcodeInput) passcodeInput.value = "";
+        }
+        if (passcodeInput) {
+          passcodeInput.addEventListener("focus", enablePasscodeInput);
+          passcodeInput.addEventListener("pointerdown", enablePasscodeInput);
+          passcodeInput.addEventListener("mousedown", enablePasscodeInput);
+          passcodeInput.addEventListener("touchstart", enablePasscodeInput, { passive: true });
+          passcodeInput.addEventListener("keydown", enablePasscodeInput);
+          passcodeInput.addEventListener("input", function () { passcodeTouched = true; });
+          clearAutofilledPasscode();
+          setTimeout(clearAutofilledPasscode, 50);
+          setTimeout(clearAutofilledPasscode, 250);
+          setTimeout(clearAutofilledPasscode, 750);
+          setTimeout(clearAutofilledPasscode, 1500);
+          window.addEventListener("load", clearAutofilledPasscode);
+          window.addEventListener("pageshow", function () {
+            /* A bfcache / refresh restore can bring the field back
+               already filled — clear it again on every show of the
+               locked page, regardless of earlier interaction. */
+            if (!unlocked && passcodeInput) passcodeInput.value = "";
+          });
+        }
 
         /* Her side of the inbox can read and post, but not delete — so
            clearing posts a hidden marker message instead. Everything at
@@ -3167,7 +3225,11 @@
            lands back on the gate, because the credentials live in
            memory only — there is nothing stored to re-open with. */
         if (lockBtn) lockBtn.hidden = true;
-        passcodeInput.focus();
+        /* No auto-focus here on purpose: focusing the passcode
+           field on load would remove its readonly guard (see the
+           autofill guard above) and invite the browser to fill it.
+           She taps or tabs into it when she is ready to type. */
+        clearAutofilledPasscode();
       })();
     </script>
   </body>
