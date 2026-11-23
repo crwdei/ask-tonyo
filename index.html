@@ -755,7 +755,12 @@
          button when speech recognition is supported. */
       .mic-lang-chip {
         flex: 0 0 auto;
-        align-self: center;
+        /* Bottom-aligned with the 48px button row (the 6px margin
+           optically centres the 36px chip against those buttons),
+           so when the textarea grows the chip stays down with the
+           paperclip / mic / Send instead of floating mid-box. */
+        align-self: flex-end;
+        margin-bottom: 6px;
         height: 36px;
         min-height: 36px;
         padding: 0 10px;
@@ -906,7 +911,14 @@
         padding: 12px 15px;
         resize: none;
         min-height: 48px;
-        max-height: 120px;
+        /* Cap the auto-grow at six lines (6 × 23.2px line-height +
+           24px padding + 3px border ≈ 166px). Past the cap the box
+           scrolls internally — the draft is never pushed up out of
+           the composer or over the messages above it. The JS
+           autosize reads this same computed max-height, so the two
+           caps can never drift apart (the short-landscape rule
+           below tightens it further and is honoured the same way). */
+        max-height: 168px;
         outline: none;
         overflow-y: auto;
         /* Hide the scrollbar — the text still scrolls inside the box
@@ -1428,7 +1440,7 @@
         footer { padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
         .composer { gap: var(--space-2); }
         .attach-btn { width: 48px; height: 48px; }
-        .mic-lang-chip { height: 34px; min-height: 34px; padding: 0 8px; font-size: 12px; }
+        .mic-lang-chip { height: 34px; min-height: 34px; margin-bottom: 7px; padding: 0 8px; font-size: 12px; }
         textarea { padding: 12px 14px; border-radius: 22px; }
         .send-btn { min-width: 68px; padding: 12px 18px; font-size: 15px; }
         .error-note { font-size: 12.5px; padding: 8px 10px; }
@@ -2740,7 +2752,26 @@
 
         function autosize() {
           input.style.height = "auto";
-          input.style.height = Math.min(input.scrollHeight, 120) + "px";
+          var cs = window.getComputedStyle(input);
+          /* scrollHeight covers content + padding but not the
+             border; with border-box sizing the border has to be
+             added back, or the box ends up a few px short of the
+             text it holds and the top line slips out of view. */
+          var borderY = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+          var target = input.scrollHeight + borderY;
+          /* Cap at the stylesheet's own max-height (six lines on
+             desktop and mobile alike, tighter on short landscape
+             screens) — past the cap the textarea scrolls inside
+             itself and the composer bar stays put. */
+          var maxH = parseFloat(cs.maxHeight);
+          if (!isNaN(maxH) && maxH > 0) target = Math.min(target, maxH);
+          input.style.height = target + "px";
+          /* Resizing can leave the scroll position stale; when she
+             is typing at the end of the draft, keep that last line
+             (and the caret) in view. */
+          if (input.value && input.selectionStart === input.value.length) {
+            input.scrollTop = input.scrollHeight;
+          }
         }
 
         function send() {
@@ -3515,6 +3546,12 @@
         function rememberScroll() { wasNearBottom = nearBottom(); }
         scroller.addEventListener("scroll", rememberScroll, { passive: true });
         scroller.addEventListener("touchstart", rememberScroll, { passive: true });
+
+        /* A narrower or wider viewport re-wraps the draft, so the
+           height fitted for the old width is wrong — refit on
+           resize (rotation, desktop window drag, keyboard-driven
+           layout changes) to keep the same cap-and-scroll rule. */
+        window.addEventListener("resize", autosize);
 
         input.addEventListener("focus", function () {
           /* Keyboard slides up after focus — wait, then keep the
