@@ -882,6 +882,17 @@
       .file-download:active:not(:disabled) { transform: scale(0.97); }
       .file-download:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
 
+      /* Shown in place of the Download button once a delivered file
+         is gone — either the message is older than the 7-day file
+         retention, or the stored file came back missing. */
+      .file-expired {
+        margin-top: 9px;
+        font-size: 13px;
+        line-height: 1.45;
+        font-style: italic;
+        color: var(--ink-soft);
+      }
+
       textarea {
         flex: 1 1 auto;
         min-width: 0; /* prevents overflow on narrow phones */
@@ -2642,15 +2653,19 @@
                  button wired to the stored file; her own uploads
                  need none (the file came from her device). */
               if (m.sender !== "her" && fe.path) {
-                var dlBtn = document.createElement("button");
-                dlBtn.type = "button";
-                dlBtn.className = "file-download";
-                dlBtn.textContent = "Download";
-                dlBtn.setAttribute("aria-label", "Download " + fname);
-                (function (path, name, btn) {
-                  btn.addEventListener("click", function () { downloadDeliveredFile(path, name, btn); });
-                })(fe.path, fname, dlBtn);
-                entry.appendChild(dlBtn);
+                if (isFileExpired(m.created_at)) {
+                  entry.appendChild(makeFileExpiredNote());
+                } else {
+                  var dlBtn = document.createElement("button");
+                  dlBtn.type = "button";
+                  dlBtn.className = "file-download";
+                  dlBtn.textContent = "Download";
+                  dlBtn.setAttribute("aria-label", "Download " + fname);
+                  (function (path, name, btn) {
+                    btn.addEventListener("click", function () { downloadDeliveredFile(path, name, btn); });
+                  })(fe.path, fname, dlBtn);
+                  entry.appendChild(dlBtn);
+                }
               }
               bubble.appendChild(entry);
             });
@@ -2862,6 +2877,27 @@
           if (stagedFiles.length) input.focus();
         }
 
+        /* Delivered files are kept for 7 days. Past that — judged by
+           the message's own timestamp — the file entry shows an
+           expired note instead of a Download button. A message with
+           no readable timestamp is never treated as expired here;
+           the download click below still catches a missing file. */
+        var FILE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+        function isFileExpired(createdAt) {
+          if (!createdAt) return false;
+          var t = Date.parse(createdAt);
+          if (isNaN(t)) return false;
+          return (Date.now() - t) > FILE_TTL_MS;
+        }
+
+        function makeFileExpiredNote() {
+          var note = document.createElement("div");
+          note.className = "file-expired";
+          note.textContent = "File expired — ask Tonyo to resend";
+          return note;
+        }
+
         /* Fetch a file Tonyo delivered into the thread and save it
            to her device. Uses the same captured fetch and inbox
            headers as everything else; the blob URL is same-page,
@@ -2896,6 +2932,13 @@
             .catch(function (err) {
               if (err && (err.status === 401 || err.status === 403)) {
                 relock("That passcode didn't work — try again.");
+                return;
+              }
+              if (err && err.status === 404) {
+                /* The stored file is gone — swap the button for the
+                   expired note instead of leaving a retry that can
+                   never succeed. */
+                if (btn.parentNode) btn.parentNode.replaceChild(makeFileExpiredNote(), btn);
                 return;
               }
               btn.textContent = "Couldn't download — tap to retry";
