@@ -1464,6 +1464,78 @@
         textarea { font-size: 16px; }
       }
 
+      /* ---------- My List ---------- */
+      .mylist-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 44px; min-height: 44px; padding: 0 14px; font: inherit; font-size: 14px; font-weight: 600; color: var(--rose-deep); background: var(--paper); border: 1.5px solid var(--blush); border-radius: 999px; cursor: pointer; white-space: nowrap; }
+      .mylist-btn:active { transform: scale(0.97); }
+      .mylist-badge { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--rose); color: #fff; font-size: 12px; font-weight: 700; line-height: 1; }
+      .mylist-badge[hidden] { display: none !important; }
+      .tasks-banner { flex: 0 0 auto; background: var(--rose-soft); border-bottom: 1px solid var(--line); padding: 8px 16px; }
+      .tasks-banner[hidden] { display: none !important; }
+      .tasks-banner-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+      .tasks-banner-inner p { flex: 1; margin: 0; font-size: 13.5px; color: var(--ink); }
+      .tasks-banner-inner p strong { color: var(--rose-deep); }
+      .tasks-banner-dismiss { flex: 0 0 auto; width: 36px; height: 36px; min-height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); font-size: 17px; cursor: pointer; display: grid; place-items: center; }
+      .layout-row { flex: 1 1 auto; min-height: 0; display: flex; width: 100%; }
+      .chat-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+      .chat-col main { flex: 1 1 auto; }
+      .tasks-sidebar { display: none; }
+      @media (min-width: 1024px) {
+        .layout-row { max-width: 1180px; margin: 0 auto; }
+        body.tasks-collapsed .tasks-sidebar { display: none !important; }
+        .tasks-sidebar { display: flex; flex-direction: column; width: 360px; flex: 0 0 360px; min-height: 0; background: var(--paper); border-left: 1px solid var(--line); }
+        .tasks-sidebar .tasks-head { padding: 16px 16px 8px; }
+        .tasks-sidebar .tasks-list { padding: 8px 16px 24px; }
+      }
+      @media (min-width: 1024px) and (min-height: 501px) {
+        header, .install-hint { max-width: 1180px !important; }
+        .layout-row { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+        .chat-col main { border-left: none !important; border-right: none !important; box-shadow: none !important; max-width: none !important; margin: 0 !important; width: 100% !important; }
+        .chat-col footer { border: none !important; border-top: 1px solid var(--line) !important; border-radius: 0 !important; box-shadow: none !important; max-width: none !important; margin: 0 !important; width: 100% !important; }
+        .tasks-sidebar { border-bottom: 1px solid var(--line); }
+      }
+      .tasks-overlay { position: fixed; inset: 0; height: 100dvh; max-height: 100dvh; overflow: hidden; z-index: 55; background: var(--cream); display: flex; flex-direction: column; }
+      .tasks-overlay[hidden] { display: none !important; }
+      .tasks-panel { flex: 1; min-height: 0; width: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; }
+      .tasks-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(16px + env(safe-area-inset-top,0px)) 16px 12px; }
+      .tasks-head h2 { font-family: Georgia, serif; font-size: 24px; color: var(--rose-deep); margin: 0; }
+      .tasks-close { width: 44px; height: 44px; min-height: 44px; border-radius: 50%; border: 1.5px solid var(--blush); background: var(--paper); color: var(--rose-deep); font-size: 20px; cursor: pointer; display: grid; place-items: center; }
+      .tasks-add-btn { margin: 0 16px 8px; font: inherit; font-weight: 600; font-size: 15px; color: #fff; background: var(--rose); border: none; border-radius: 999px; padding: 12px 18px; min-height: 48px; cursor: pointer; }
+      .tasks-sidebar .tasks-add-btn { margin: 0 16px 8px; }
+      .tasks-list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 16px calc(24px + env(safe-area-inset-bottom,0px)); display: flex; flex-direction: column; gap: 6px; }
+      .tasks-group-title { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft); margin: 14px 2px 4px; }
+      .tasks-group-title.overdue { color: var(--rose-deep); }
+      .task-row { display: flex; gap: 10px; align-items: flex-start; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; cursor: pointer; text-align: left; width: 100%; font: inherit; color: var(--ink); }
+      .task-check { flex: 0 0 auto; width: 44px; height: 44px; min-height: 44px; border-radius: 50%; border: 2px solid var(--blush); background: var(--paper); display: grid; place-items: center; cursor: pointer; font-size: 18px; color: #fff; padding: 0; }
+      .task-check.done { background: var(--sage); border-color: var(--sage); }
+      .task-main { flex: 1; min-width: 0; padding-top: 4px; }
+      .task-title { font-size: 15.5px; font-weight: 600; line-height: 1.4; overflow-wrap: break-word; }
+      .task-row.is-done .task-title { text-decoration: line-through; color: var(--ink-soft); }
+      .task-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 5px; }
+      .task-chip { font-size: 12px; font-weight: 600; background: var(--rose-soft); color: var(--rose-deep); border: 1px solid var(--blush); border-radius: 999px; padding: 3px 9px; }
+      .task-due { font-size: 13px; color: var(--ink-soft); }
+      .task-due.overdue { color: var(--rose-deep); font-weight: 600; }
+      .task-notes { font-size: 13px; color: var(--ink-soft); margin-top: 4px; line-height: 1.45; overflow-wrap: break-word; }
+      .tasks-empty, .tasks-error { text-align: center; padding: 28px 16px; color: var(--ink-soft); font-size: 15px; line-height: 1.6; }
+      .tasks-retry { margin-top: 10px; font: inherit; font-weight: 600; color: var(--rose-deep); background: var(--paper); border: 1.5px solid var(--blush); border-radius: 999px; padding: 10px 18px; min-height: 44px; cursor: pointer; }
+      .done-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; background: transparent; border: none; font: inherit; cursor: pointer; padding: 6px 2px; }
+      .task-form-overlay { position: fixed; inset: 0; z-index: 58; background: rgba(74,50,48,.45); display: grid; place-items: end center; padding: 0; }
+      .task-form-overlay[hidden] { display: none !important; }
+      @media (min-width: 640px) { .task-form-overlay { place-items: center; padding: 20px; } }
+      .task-form-card { background: var(--paper); width: 100%; max-width: 480px; max-height: 92dvh; overflow-y: auto; border-radius: 18px 18px 0 0; padding: 20px; }
+      @media (min-width: 640px) { .task-form-card { border-radius: 18px; } }
+      .task-form-card h3 { font-family: Georgia, serif; color: var(--rose-deep); margin: 0 0 14px; font-size: 20px; }
+      .task-field { margin-bottom: 12px; }
+      .task-field label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+      .task-field input, .task-field textarea { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--cream); border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 13px; outline: none; }
+      .task-field textarea { min-height: 64px; resize: vertical; }
+      .subject-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .subject-chip { font: inherit; font-size: 13px; font-weight: 600; color: var(--rose-deep); background: var(--paper); border: 1.5px solid var(--blush); border-radius: 999px; padding: 8px 13px; min-height: 40px; cursor: pointer; }
+      .task-form-actions { display: flex; gap: 10px; margin-top: 16px; }
+      .task-save { flex: 1; font: inherit; font-weight: 600; color: #fff; background: var(--rose); border: none; border-radius: 999px; padding: 12px; min-height: 48px; cursor: pointer; }
+      .task-cancel { flex: 1; font: inherit; font-weight: 600; color: var(--ink); background: var(--cream); border: 1.5px solid var(--line); border-radius: 999px; padding: 12px; min-height: 48px; cursor: pointer; }
+      .task-delete { width: 100%; margin-top: 12px; font: inherit; font-weight: 600; color: var(--rose-deep); background: var(--rose-soft); border: 1.5px solid var(--blush); border-radius: 999px; padding: 11px; min-height: 48px; cursor: pointer; }
+      .task-delete.confirm { background: var(--rose); color: #fff; border-color: var(--rose); }
+
       /* ---------- Wide screens: the column becomes a soft card ----------
          On a desktop the full-width bands drift apart; instead the
          whole column (header, hint, thread, composer) sits in one
@@ -1531,6 +1603,7 @@
           <button class="history-btn" id="historyBtn" type="button" aria-label="History" title="History">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
           </button>
+          <button class="mylist-btn" id="myListBtn" type="button" aria-label="My List" title="My List">My List<span class="mylist-badge" id="myListBadge" hidden>0</span></button>
           <button class="clear-btn" id="clearBtn" type="button" disabled aria-label="New chat" title="New chat">New chat</button>
           <button class="lock-btn" id="lockBtn" type="button" hidden aria-label="Lock" title="Lock">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -1546,6 +1619,8 @@
       </div>
     </div>
 
+    <div class="tasks-banner" id="tasksBanner" hidden><div class="tasks-banner-inner"><p id="tasksBannerText"></p><button class="tasks-banner-dismiss" id="tasksBannerDismiss" type="button" aria-label="Dismiss reminders">×</button></div></div>
+    <div class="layout-row"><div class="chat-col">
     <main id="scroller">
       <div class="ptr" id="ptr" aria-hidden="true">
         <span class="ptr-pill">
@@ -1587,6 +1662,13 @@
         </form>
       </div>
     </footer>
+    </div>
+    <aside class="tasks-sidebar" id="tasksSidebar" aria-label="My List"><div class="tasks-head"><h2>My List</h2></div><button class="tasks-add-btn" type="button" data-add-task>+ Add task</button><div class="tasks-list" id="tasksListSidebar"></div></aside>
+    </div>
+
+    <div class="tasks-overlay" id="tasksOverlay" hidden><div class="tasks-panel" role="dialog" aria-modal="true" aria-labelledby="tasksTitle"><div class="tasks-head"><h2 id="tasksTitle">My List</h2><button class="tasks-close" id="tasksClose" type="button" aria-label="Close My List">×</button></div><button class="tasks-add-btn" type="button" data-add-task>+ Add task</button><div class="tasks-list" id="tasksListPanel"></div></div></div>
+
+    <div class="task-form-overlay" id="taskFormOverlay" hidden><div class="task-form-card" role="dialog" aria-modal="true" aria-labelledby="taskFormTitle"><h3 id="taskFormTitle">Add task</h3><form id="taskForm"><div class="task-field"><label for="taskTitleInput">Title *</label><input id="taskTitleInput" type="text" required autocomplete="off" /></div><div class="task-field"><label for="taskSubjectInput">Subject</label><input id="taskSubjectInput" type="text" autocomplete="off" placeholder="e.g. EDUC 112" /><div class="subject-chips" id="subjectChips"></div></div><div class="task-field"><label for="taskDateInput">Due date</label><input id="taskDateInput" type="date" /></div><div class="task-field"><label for="taskTimeInput">Time (optional)</label><input id="taskTimeInput" type="time" /></div><div class="task-field"><label for="taskNotesInput">Notes</label><textarea id="taskNotesInput" placeholder="Optional note"></textarea></div><div class="task-form-actions"><button class="task-cancel" id="taskCancel" type="button">Cancel</button><button class="task-save" id="taskSave" type="submit">Save task</button></div><button class="task-delete" id="taskDelete" type="button" hidden>Delete task</button></form></div></div>
 
     <div class="gate-overlay" id="gateOverlay">
       <div class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gateTitle" aria-describedby="gateDesc">
@@ -1711,6 +1793,35 @@
         var installHint = document.getElementById("installHint");
         var installHintText = document.getElementById("installHintText");
         var installDismiss = document.getElementById("installDismiss");
+        var TASKS_URL = "https://vagijhlfaflssatfavqp.supabase.co/rest/v1/tasks";
+        var myListBtn = document.getElementById("myListBtn");
+        var myListBadge = document.getElementById("myListBadge");
+        var tasksBanner = document.getElementById("tasksBanner");
+        var tasksBannerText = document.getElementById("tasksBannerText");
+        var tasksBannerDismiss = document.getElementById("tasksBannerDismiss");
+        var tasksOverlay = document.getElementById("tasksOverlay");
+        var tasksClose = document.getElementById("tasksClose");
+        var tasksListPanel = document.getElementById("tasksListPanel");
+        var tasksListSidebar = document.getElementById("tasksListSidebar");
+        var taskFormOverlay = document.getElementById("taskFormOverlay");
+        var taskForm = document.getElementById("taskForm");
+        var taskFormTitle = document.getElementById("taskFormTitle");
+        var taskTitleInput = document.getElementById("taskTitleInput");
+        var taskSubjectInput = document.getElementById("taskSubjectInput");
+        var taskDateInput = document.getElementById("taskDateInput");
+        var taskTimeInput = document.getElementById("taskTimeInput");
+        var taskNotesInput = document.getElementById("taskNotesInput");
+        var subjectChips = document.getElementById("subjectChips");
+        var taskCancel = document.getElementById("taskCancel");
+        var taskDelete = document.getElementById("taskDelete");
+        var allTasks = [];
+        var tasksLoaded = false;
+        var tasksError = false;
+        var bannerDismissed = false;
+        var doneExpanded = false;
+        var editingTaskId = null;
+        var deleteArmed = false;
+        try { if (localStorage.getItem("mylist-collapsed") === "1") document.body.classList.add("tasks-collapsed"); } catch (e) {}
 
         /* ---------- Passcode autofill guard ----------
            Chrome (and other browsers) treat this field as a saved
@@ -1866,6 +1977,96 @@
           return h;
         }
 
+        /* ---------- My List logic (Asia/Manila) ---------- */
+        function manilaTodayStr(offsetDays) {
+          var parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+          var y=0,m=0,d=0; parts.forEach(function(p){ if(p.type==="year")y=+p.value; if(p.type==="month")m=+p.value; if(p.type==="day")d=+p.value; });
+          var dt = new Date(Date.UTC(y,m-1,d)); dt.setUTCDate(dt.getUTCDate()+(offsetDays||0));
+          return dt.toISOString().slice(0,10);
+        }
+        function fmtDueDate(ds) { if(!ds) return ""; var p=ds.split("-"); var dt=new Date(Date.UTC(+p[0],+p[1]-1,+p[2],12)); return new Intl.DateTimeFormat("en-PH",{timeZone:"Asia/Manila",weekday:"short",month:"short",day:"numeric"}).format(dt); }
+        function fmtTime(t) { if(!t) return ""; var p=t.split(":"); var h=+p[0], mi=+p[1]||0; var ap=h>=12?"PM":"AM"; var h12=h%12; if(h12===0)h12=12; return h12+":"+(mi<10?"0":"")+mi+" "+ap; }
+        function dueLabel(task, today, tomorrow) { if(!task.due_date) return ""; var base = task.due_date===today?"Today":(task.due_date===tomorrow?"Tomorrow":fmtDueDate(task.due_date)); if(task.due_time) base += " · "+fmtTime(task.due_time); return base; }
+        function sortTasks(a,b){ var da=a.due_date||"9999-12-31", db=b.due_date||"9999-12-31"; if(da!==db) return da<db?-1:1; var ta=a.due_time||"99:99", tb=b.due_time||"99:99"; if(ta!==tb) return ta<tb?-1:1; return new Date(a.created_at)-new Date(b.created_at); }
+        function groupTasks(tasks){
+          var today=manilaTodayStr(0), tomorrow=manilaTodayStr(1), weekEnd=manilaTodayStr(7);
+          var groups=[{key:"overdue",label:"Overdue",items:[]},{key:"today",label:"Today",items:[]},{key:"tomorrow",label:"Tomorrow",items:[]},{key:"week",label:"This week",items:[]},{key:"later",label:"Later",items:[]},{key:"nodate",label:"No date",items:[]}];
+          var done=[];
+          tasks.forEach(function(t){ if(t.status==="done"){ var ca=t.completed_at?new Date(t.completed_at).getTime():0; if(ca && (Date.now()-ca)>14*24*60*60*1000) return; done.push(t); return; } if(!t.due_date) groups[5].items.push(t); else if(t.due_date<today) groups[0].items.push(t); else if(t.due_date===today) groups[1].items.push(t); else if(t.due_date===tomorrow) groups[2].items.push(t); else if(t.due_date<=weekEnd) groups[3].items.push(t); else groups[4].items.push(t); });
+          groups.forEach(function(g){ g.items.sort(sortTasks); }); done.sort(function(a,b){ return new Date(b.completed_at||b.updated_at)-new Date(a.completed_at||a.updated_at); });
+          return {groups:groups, done:done, today:today, tomorrow:tomorrow};
+        }
+        function updateBadgeAndBanner(){
+          var today=manilaTodayStr(0), tomorrow=manilaTodayStr(1);
+          var overdue=0, dueToday=0, dueTomorrow=0;
+          allTasks.forEach(function(t){ if(t.status!=="open"||!t.due_date) return; if(t.due_date<today) overdue++; else if(t.due_date===today) dueToday++; else if(t.due_date===tomorrow) dueTomorrow++; });
+          var badgeCount=overdue+dueToday;
+          if(myListBadge){ if(badgeCount>0){ myListBadge.textContent=String(badgeCount); myListBadge.hidden=false; } else myListBadge.hidden=true; }
+          if(tasksBanner){ if(bannerDismissed||(overdue+dueToday+dueTomorrow===0)){ tasksBanner.hidden=true; } else { var parts=[]; if(overdue) parts.push(overdue+" overdue"); if(dueToday) parts.push(dueToday+" due today"); if(dueTomorrow) parts.push(dueTomorrow+" due tomorrow"); tasksBannerText.innerHTML=""; var s=document.createElement("strong"); s.textContent="My List: "; tasksBannerText.appendChild(s); tasksBannerText.appendChild(document.createTextNode(parts.join(" · "))); tasksBanner.hidden=false; } }
+        }
+        function buildTaskList(container){
+          while(container.firstChild) container.removeChild(container.firstChild);
+          if(tasksError){ var e=document.createElement("div"); e.className="tasks-error"; e.textContent="Couldn't load your list — tap to retry"; var rb=document.createElement("button"); rb.className="tasks-retry"; rb.type="button"; rb.textContent="Retry"; rb.addEventListener("click",function(){ loadTasks(); }); e.appendChild(document.createElement("br")); e.appendChild(rb); container.appendChild(e); return; }
+          if(!allTasks.length){ var em=document.createElement("div"); em.className="tasks-empty"; em.textContent="Nothing here yet — tell Tonyo in chat, or tap + Add task."; container.appendChild(em); return; }
+          var grouped=groupTasks(allTasks);
+          function makeRow(t){
+            var row=document.createElement("div"); row.className="task-row"+(t.status==="done"?" is-done":"");
+            var chk=document.createElement("button"); chk.type="button"; chk.className="task-check"+(t.status==="done"?" done":""); chk.setAttribute("aria-label", t.status==="done"?"Reopen "+t.title:"Mark done: "+t.title); chk.textContent=t.status==="done"?"✓":"";
+            chk.addEventListener("click",function(ev){ ev.stopPropagation(); toggleTask(t); });
+            var main=document.createElement("div"); main.className="task-main";
+            var ttl=document.createElement("div"); ttl.className="task-title"; ttl.textContent=t.title; main.appendChild(ttl);
+            var meta=document.createElement("div"); meta.className="task-meta";
+            if(t.subject){ var chip=document.createElement("span"); chip.className="task-chip"; chip.textContent=t.subject; meta.appendChild(chip); }
+            var dl=dueLabel(t, grouped.today, grouped.tomorrow); if(dl){ var dEl=document.createElement("span"); dEl.className="task-due"+((t.status==="open"&&t.due_date&&t.due_date<grouped.today)?" overdue":""); dEl.textContent=dl; meta.appendChild(dEl); }
+            if(meta.childNodes.length) main.appendChild(meta);
+            if(t.notes){ var n=document.createElement("div"); n.className="task-notes"; n.textContent=t.notes; main.appendChild(n); }
+            row.appendChild(chk); row.appendChild(main);
+            row.addEventListener("click",function(){ openTaskForm(t); });
+            return row;
+          }
+          grouped.groups.forEach(function(g){ if(!g.items.length) return; var h=document.createElement("div"); h.className="tasks-group-title"+(g.key==="overdue"?" overdue":""); h.textContent=g.label; container.appendChild(h); g.items.forEach(function(t){ container.appendChild(makeRow(t)); }); });
+          if(grouped.done.length){
+            var dh=document.createElement("button"); dh.type="button"; dh.className="done-toggle"; var dl2=document.createElement("span"); dl2.className="tasks-group-title"; dl2.style.margin="0"; dl2.textContent="Done ("+grouped.done.length+")"; var chev=document.createElement("span"); chev.textContent=doneExpanded?"▾":"▸"; chev.style.color="var(--ink-soft)"; dh.appendChild(dl2); dh.appendChild(chev);
+            dh.addEventListener("click",function(){ doneExpanded=!doneExpanded; renderTasks(); });
+            container.appendChild(dh);
+            if(doneExpanded) grouped.done.forEach(function(t){ container.appendChild(makeRow(t)); });
+          }
+          if(!grouped.groups.some(function(g){return g.items.length;}) && !grouped.done.length){ var em2=document.createElement("div"); em2.className="tasks-empty"; em2.textContent="Nothing here yet — tell Tonyo in chat, or tap + Add task."; container.appendChild(em2); }
+        }
+        function renderTasks(){ if(tasksListPanel) buildTaskList(tasksListPanel); if(tasksListSidebar) buildTaskList(tasksListSidebar); updateBadgeAndBanner(); }
+        function loadTasks(){
+          if(!unlocked||!API_KEY||!THREAD_TOKEN) return Promise.resolve();
+          return nativeFetch(TASKS_URL+"?select=*&order=created_at.asc",{headers:headers()}).then(function(r){ if(!r.ok) throw new Error("tasks "+r.status); return r.json(); }).then(function(rows){ allTasks=rows||[]; tasksLoaded=true; tasksError=false; renderTasks(); }).catch(function(){ tasksError=true; renderTasks(); });
+        }
+        function toggleTask(t){
+          var isDone=t.status==="done"; var now=new Date().toISOString();
+          var payload=isDone?{status:"open",completed_at:null,updated_at:now}:{status:"done",completed_at:now,updated_at:now};
+          nativeFetch(TASKS_URL+"?id=eq."+t.id,{method:"PATCH",headers:headers({"Content-Type":"application/json","Prefer":"return=representation"}),body:JSON.stringify(payload)}).then(function(r){ if(!r.ok) throw new Error("patch"); return r.json(); }).then(function(){ loadTasks(); }).catch(function(){ tasksError=true; renderTasks(); });
+        }
+        function distinctSubjects(){ var seenS={}, out=[]; allTasks.forEach(function(t){ if(t.subject&&!seenS[t.subject]){ seenS[t.subject]=true; out.push(t.subject); } }); return out; }
+        function openTaskForm(task){
+          editingTaskId=task?task.id:null; deleteArmed=false;
+          taskFormTitle.textContent=task?"Edit task":"Add task";
+          taskTitleInput.value=task?task.title:""; taskSubjectInput.value=task?(task.subject||""):""; taskDateInput.value=task?(task.due_date||""):""; taskTimeInput.value=task?(task.due_time?String(task.due_time).slice(0,5):""):""; taskNotesInput.value=task?(task.notes||""):"";
+          taskDelete.hidden=!task; taskDelete.textContent="Delete task"; taskDelete.classList.remove("confirm");
+          while(subjectChips.firstChild) subjectChips.removeChild(subjectChips.firstChild);
+          distinctSubjects().forEach(function(s){ var b=document.createElement("button"); b.type="button"; b.className="subject-chip"; b.textContent=s; b.addEventListener("click",function(){ taskSubjectInput.value=s; }); subjectChips.appendChild(b); });
+          taskFormOverlay.hidden=false; setTimeout(function(){ taskTitleInput.focus(); },50);
+        }
+        function closeTaskForm(){ taskFormOverlay.hidden=true; editingTaskId=null; }
+        if(taskForm) taskForm.addEventListener("submit",function(e){ e.preventDefault(); var title=taskTitleInput.value.trim(); if(!title) return; var dateVal=taskDateInput.value||null; var payload={title:title, subject:taskSubjectInput.value.trim()||null, due_date:dateVal, due_time:dateVal?(taskTimeInput.value?taskTimeInput.value+":00":null):null, notes:taskNotesInput.value.trim()||null, updated_at:new Date().toISOString()};
+          var req; if(editingTaskId){ req=nativeFetch(TASKS_URL+"?id=eq."+editingTaskId,{method:"PATCH",headers:headers({"Content-Type":"application/json","Prefer":"return=representation"}),body:JSON.stringify(payload)}); } else { payload.status="open"; payload.source="form"; req=nativeFetch(TASKS_URL,{method:"POST",headers:headers({"Content-Type":"application/json","Prefer":"return=representation"}),body:JSON.stringify(payload)}); }
+          req.then(function(r){ if(!r.ok) throw new Error("save"); closeTaskForm(); loadTasks(); }).catch(function(){ closeTaskForm(); tasksError=true; renderTasks(); });
+        });
+        if(taskCancel) taskCancel.addEventListener("click",closeTaskForm);
+        if(taskFormOverlay) taskFormOverlay.addEventListener("click",function(e){ if(e.target===taskFormOverlay) closeTaskForm(); });
+        if(taskDelete) taskDelete.addEventListener("click",function(){ if(!editingTaskId) return; if(!deleteArmed){ deleteArmed=true; taskDelete.textContent="Confirm delete"; taskDelete.classList.add("confirm"); return; } nativeFetch(TASKS_URL+"?id=eq."+editingTaskId,{method:"DELETE",headers:headers({"Prefer":"return=minimal"})}).then(function(){ closeTaskForm(); loadTasks(); }).catch(function(){ closeTaskForm(); }); });
+        document.querySelectorAll("[data-add-task]").forEach(function(b){ b.addEventListener("click",function(){ openTaskForm(null); }); });
+        function openTasksPanel(){ if(window.innerWidth>=1024){ var collapsed=document.body.classList.contains("tasks-collapsed"); if(collapsed){ document.body.classList.remove("tasks-collapsed"); try{localStorage.setItem("mylist-collapsed","0");}catch(e){} loadTasks(); } else { document.body.classList.add("tasks-collapsed"); try{localStorage.setItem("mylist-collapsed","1");}catch(e){} } return; } renderTasks(); if(tasksOverlay) tasksOverlay.hidden=false; loadTasks(); }
+        if(myListBtn) myListBtn.addEventListener("click",openTasksPanel);
+        if(tasksClose) tasksClose.addEventListener("click",function(){ tasksOverlay.hidden=true; });
+        if(tasksBannerDismiss) tasksBannerDismiss.addEventListener("click",function(){ bannerDismissed=true; if(tasksBanner) tasksBanner.hidden=true; });
+
         /* ---------- Passcode gate ---------- */
         /* The passcode key is derived with the browser's native
            PBKDF2 (WebCrypto) — see unscrambleCredentials below. No
@@ -1976,6 +2177,11 @@
           if (lockBtn) lockBtn.hidden = true;
           if (clearOverlay) clearOverlay.hidden = true;
           if (historyOverlay) historyOverlay.hidden = true;
+          if (tasksOverlay) tasksOverlay.hidden = true;
+          if (taskFormOverlay) taskFormOverlay.hidden = true;
+          if (tasksBanner) tasksBanner.hidden = true;
+          allTasks = []; tasksLoaded = false; tasksError = false; bannerDismissed = false;
+          if (myListBadge) myListBadge.hidden = true;
           allRows = [];
           expandedSessions = {};
           passcodeInput.value = "";
@@ -2054,7 +2260,9 @@
                 hideGateError();
                 gateOverlay.hidden = true;
                 if (lockBtn) lockBtn.hidden = false;
+                bannerDismissed = false;
                 loadMessages(true);
+                loadTasks();
                 if (pollTimer) clearInterval(pollTimer);
                 pollTimer = setInterval(function () { loadMessages(false); }, POLL_MS);
                 input.focus();
@@ -2706,9 +2914,11 @@
               });
               if (clearedBeforeId) purgeClearedMessages();
               var hadNew = false;
+              var hadNewJett = false;
               rows.forEach(function (m) {
-                if (!seen[m.id]) { addMessage(m, !initial); hadNew = true; }
+                if (!seen[m.id]) { addMessage(m, !initial); hadNew = true; if (m.sender === "jett" && !isWorkingSignal(m) && !isClearMarker(m)) hadNewJett = true; }
               });
+              if (!initial && hadNewJett) loadTasks();
               /* On first load (e.g. she reopened the page while a
                  reply is still pending) restore the indicator if
                  her message is the last one. Later polls are left
