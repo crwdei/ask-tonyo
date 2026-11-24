@@ -1391,20 +1391,22 @@
         header {
           padding: calc(var(--space-2) + env(safe-area-inset-top, 0px)) var(--space-3) var(--space-2);
         }
-        .header-inner { gap: var(--space-3); align-items: center; }
+        /* Narrow screens: the avatar + title/subtitle take the first
+           row at full width and the three controls drop to their own
+           right-aligned row. Squeezing all five into one row forced
+           the title to wrap and clipped the subtitle mid-word; here
+           the title stays on one line and the subtitle wraps in
+           full, while every control keeps its 44px tap target. */
+        .header-inner { gap: var(--space-2) var(--space-3); align-items: center; flex-wrap: wrap; }
         .monogram-wrap { width: 38px; height: 38px; }
         .monogram { width: 38px; height: 38px; font-size: 18px; border-width: 1px; }
         .presence-dot { width: 11px; height: 11px; }
-        h1 { font-size: 21px; margin-bottom: 2px; }
+        h1 { font-size: 20px; margin-bottom: 2px; white-space: nowrap; }
         .subtitle {
           font-size: 12.5px;
           line-height: 1.45;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
         }
-        .header-actions { gap: var(--space-2); }
+        .header-actions { gap: var(--space-2); order: 3; flex: 1 1 100%; margin-left: 0; justify-content: flex-end; }
         .lock-btn { width: 44px; height: 44px; }
         .clear-btn { height: 44px; padding: 0 13px; font-size: 13.5px; }
         .install-hint { padding-top: var(--space-2); padding-bottom: var(--space-2); }
@@ -1423,12 +1425,12 @@
         .empty .omark { font-size: 28px; }
         .empty p { font-size: 14.5px; }
 
-        footer { padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
-        .composer { gap: var(--space-2); }
+        footer { padding: var(--space-2) 10px calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
+        .composer { gap: 6px; }
         .attach-btn { width: 48px; height: 48px; }
         .mic-timer { height: 34px; min-height: 34px; margin-bottom: 7px; padding: 0 8px; font-size: 12px; }
-        textarea { padding: 12px 14px; border-radius: 22px; }
-        .send-btn { min-width: 68px; padding: 12px 18px; font-size: 15px; }
+        textarea { padding: 12px; border-radius: 22px; }
+        .send-btn { min-width: 62px; padding: 12px 14px; font-size: 15px; }
         .error-note { font-size: 12.5px; padding: 8px 10px; }
       }
 
@@ -1436,7 +1438,7 @@
         .monogram-wrap { width: 34px; height: 34px; }
         .monogram { width: 34px; height: 34px; font-size: 16px; }
         h1 { font-size: 20px; }
-        .subtitle { font-size: 12px; -webkit-line-clamp: 2; }
+        .subtitle { font-size: 12px; }
         .msg { max-width: 93%; }
         .bubble { font-size: 14.5px; padding: 9px 12px; }
         .send-btn { min-width: 62px; padding: 12px 14px; }
@@ -1580,7 +1582,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
           </button>
           <span class="mic-timer" id="micTimer" hidden aria-hidden="true">0:00</span>
-          <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
+          <textarea id="input" rows="1" placeholder="Type a message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
           <button class="send-btn" id="sendBtn" type="submit">Send</button>
         </form>
       </div>
@@ -2745,6 +2747,19 @@
              text it holds and the top line slips out of view. */
           var borderY = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
           var target = input.scrollHeight + borderY;
+          /* Empty means exactly one line tall. scrollHeight counts
+             the placeholder too, so a placeholder that wraps on a
+             narrow phone would otherwise leave the untouched
+             composer two lines tall. The one-line height is derived
+             from the same computed style (line-height + vertical
+             padding + border), so it tracks the stylesheet at
+             every width; typed text keeps the scrollHeight path
+             below, growing to the max-height cap as before. */
+          if (!input.value) {
+            var lineH = parseFloat(cs.lineHeight) || 0;
+            var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+            if (lineH > 0) target = lineH + padY + borderY;
+          }
           /* Cap at the stylesheet's own max-height (six lines on
              desktop and mobile alike, tighter on short landscape
              screens) — past the cap the textarea scrolls inside
@@ -3256,7 +3271,7 @@
            knows its words are no longer wanted and drops them. */
         var micGeneration = 0;
         var micNoteTimer = null;
-        var MIC_PLACEHOLDER = input.getAttribute("placeholder") || "Type your message…";
+        var MIC_PLACEHOLDER = input.getAttribute("placeholder") || "Type a message…";
 
         function showMicNote(text) {
           if (!micNote) return;
