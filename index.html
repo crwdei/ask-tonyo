@@ -51,6 +51,7 @@
         --space-5: 24px;
         --space-6: 32px;
         --space-7: 48px;
+        --drawer-w: min(360px, calc(100vw - 24px));
       }
 
       * { box-sizing: border-box; }
@@ -1465,72 +1466,42 @@
       }
 
       /* ---------- My List ---------- */
-      .mylist-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 44px; min-height: 44px; padding: 0 14px; font: inherit; font-size: 14px; font-weight: 600; color: var(--rose-deep); background: var(--paper); border: 1.5px solid var(--blush); border-radius: 999px; cursor: pointer; white-space: nowrap; }
-      .mylist-btn:active { transform: scale(0.97); }
       .mylist-badge { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--rose); color: #fff; font-size: 12px; font-weight: 700; line-height: 1; }
       .mylist-badge[hidden] { display: none !important; }
       .tasks-banner { flex: 0 0 auto; background: var(--rose-soft); border-bottom: 1px solid var(--line); padding: 8px 16px; }
       .tasks-banner[hidden] { display: none !important; }
-      .tasks-banner-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+      .tasks-banner-inner { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
       .tasks-banner-inner p { flex: 1; margin: 0; font-size: 13.5px; color: var(--ink); }
       .tasks-banner-inner p strong { color: var(--rose-deep); }
       .tasks-banner-dismiss { flex: 0 0 auto; width: 36px; height: 36px; min-height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); font-size: 17px; cursor: pointer; display: grid; place-items: center; }
-      .layout-row { flex: 1 1 auto; min-height: 0; display: flex; width: 100%; }
-      .chat-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
-      .chat-col main { flex: 1 1 auto; }
-      .tasks-sidebar { display: none; }
-      /* Collapse/expand toggle living in the My List header itself.
-         One shared state (body.tasks-collapsed, persisted) drives the
-         mobile panel, the laptop sidebar, both chevrons and the page
-         header's My List button, so they can never disagree. */
       .tasks-head-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
-      .tasks-head-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-      .tasks-collapse-toggle { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 50%; border: 1.5px solid var(--blush); background: var(--paper); color: var(--rose-deep); cursor: pointer; display: grid; place-items: center; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-      .tasks-collapse-toggle:active { transform: scale(0.96); }
-      .tasks-collapse-toggle svg { width: 18px; height: 18px; display: block; transition: transform 0.18s ease; }
-      body.tasks-collapsed .tasks-collapse-toggle svg { transform: rotate(-90deg); }
-      .mylist-btn .mylist-chev { width: 14px; height: 14px; display: block; flex: 0 0 auto; transition: transform 0.18s ease; }
-      body.tasks-collapsed .mylist-btn .mylist-chev { transform: rotate(-90deg); }
+      /* ---------- My List drawer ----------
+         Hidden completely by default: the page is just the chat,
+         exactly as before My List. A slim floating tab on the right
+         edge slides the panel in from the right as an overlay
+         drawer over a dimmed backdrop; the chat underneath never
+         resizes or shifts. Closing (tab again, backdrop, or the
+         panel's x) slides it fully away again. */
+      @media (max-width: 640px) { :root { --drawer-w: min(340px, calc(100vw - 24px)); } }
+      .tasks-fab { position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 57; width: 44px; min-width: 44px; min-height: 64px; padding: 10px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font: inherit; background: var(--paper); color: var(--rose-deep); border: 1.5px solid var(--blush); border-right: none; border-radius: 14px 0 0 14px; box-shadow: -6px 6px 18px rgba(164, 62, 76, 0.16); cursor: pointer; transition: transform 0.28s ease; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+      .tasks-fab:active { background: var(--rose-soft); }
+      .tasks-fab svg { width: 22px; height: 22px; display: block; flex: 0 0 auto; }
+      .tasks-fab .mylist-badge { min-width: 20px; height: 20px; padding: 0 5px; font-size: 11px; }
+      body.tasks-open .tasks-fab { transform: translate(calc(-1 * var(--drawer-w)), -50%); }
+      .tasks-backdrop { position: fixed; inset: 0; z-index: 55; background: rgba(74, 50, 48, 0.45); opacity: 0; visibility: hidden; transition: opacity 0.28s ease, visibility 0s linear 0.28s; }
+      body.tasks-open .tasks-backdrop { opacity: 1; visibility: visible; transition: opacity 0.28s ease; }
+      .tasks-drawer { position: fixed; top: 0; right: 0; height: 100vh; height: 100dvh; max-height: 100dvh; width: var(--drawer-w); z-index: 56; background: var(--cream); border-left: 1px solid var(--line); box-shadow: -18px 0 44px rgba(74, 50, 48, 0.18); display: flex; flex-direction: column; overflow: hidden; transform: translateX(105%); visibility: hidden; transition: transform 0.28s ease, visibility 0s linear 0.28s; }
+      body.tasks-open .tasks-drawer { transform: translateX(0); visibility: visible; transition: transform 0.28s ease; }
       @media (prefers-reduced-motion: reduce) {
-        .tasks-collapse-toggle svg, .mylist-btn .mylist-chev { transition: none; }
+        .tasks-fab, .tasks-backdrop, .tasks-drawer { transition: none; }
       }
-      /* Collapsed: only the section header bar (title + due badge +
-         chevron) stays visible; the add button and the whole task
-         body hide, and the chat takes the freed space. */
-      body.tasks-collapsed .tasks-overlay .tasks-add-btn,
-      body.tasks-collapsed .tasks-overlay .tasks-list,
-      body.tasks-collapsed .tasks-sidebar .tasks-add-btn,
-      body.tasks-collapsed .tasks-sidebar .tasks-list { display: none !important; }
-      body.tasks-collapsed .tasks-overlay { height: auto; max-height: none; bottom: auto; border-bottom: 1px solid var(--line); box-shadow: 0 10px 28px rgba(164, 62, 76, 0.12); }
-      body.tasks-collapsed .tasks-overlay .tasks-panel { flex: 0 0 auto; }
-      body.tasks-collapsed .tasks-overlay .tasks-head { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
-      @media (min-width: 1024px) {
-        .layout-row { max-width: 1180px; margin: 0 auto; }
-        .tasks-sidebar { display: flex; flex-direction: column; width: 360px; flex: 0 0 360px; min-height: 0; background: var(--paper); border-left: 1px solid var(--line); }
-        .tasks-sidebar .tasks-head { padding: 16px 16px 8px; }
-        .tasks-sidebar .tasks-list { padding: 8px 16px 24px; }
-        /* Collapsed sidebar shrinks to just its header bar, docked
-           at the top of the column, so the chat widens into the
-           space the task body gave up. */
-        body.tasks-collapsed .tasks-sidebar { width: 216px; flex: 0 0 216px; min-height: 0; height: auto; align-self: flex-start; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0 0 0 14px; }
-        body.tasks-collapsed .tasks-sidebar .tasks-head { padding: 12px 12px 12px 16px; }
-        body.tasks-collapsed .tasks-sidebar .tasks-head h2 { font-size: 20px; }
+      @media (max-height: 500px) and (orientation: landscape) {
+        .tasks-fab { top: 58%; }
       }
-      @media (min-width: 1024px) and (min-height: 501px) {
-        header, .install-hint { max-width: 1180px !important; }
-        .layout-row { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
-        .chat-col main { border-left: none !important; border-right: none !important; box-shadow: none !important; max-width: none !important; margin: 0 !important; width: 100% !important; }
-        .chat-col footer { border: none !important; border-top: 1px solid var(--line) !important; border-radius: 0 !important; box-shadow: none !important; max-width: none !important; margin: 0 !important; width: 100% !important; }
-        .tasks-sidebar { border-bottom: 1px solid var(--line); }
-      }
-      .tasks-overlay { position: fixed; inset: 0; height: 100dvh; max-height: 100dvh; overflow: hidden; z-index: 55; background: var(--cream); display: flex; flex-direction: column; }
-      .tasks-overlay[hidden] { display: none !important; }
-      .tasks-panel { flex: 1; min-height: 0; width: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; }
       .tasks-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(16px + env(safe-area-inset-top,0px)) 16px 12px; }
       .tasks-head h2 { font-family: Georgia, serif; font-size: 24px; color: var(--rose-deep); margin: 0; }
       .tasks-close { width: 44px; height: 44px; min-height: 44px; border-radius: 50%; border: 1.5px solid var(--blush); background: var(--paper); color: var(--rose-deep); font-size: 20px; cursor: pointer; display: grid; place-items: center; }
       .tasks-add-btn { margin: 0 16px 8px; font: inherit; font-weight: 600; font-size: 15px; color: #fff; background: var(--rose); border: none; border-radius: 999px; padding: 12px 18px; min-height: 48px; cursor: pointer; }
-      .tasks-sidebar .tasks-add-btn { margin: 0 16px 8px; }
       .tasks-list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 16px calc(24px + env(safe-area-inset-bottom,0px)); display: flex; flex-direction: column; gap: 6px; }
       .tasks-group-title { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft); margin: 14px 2px 4px; }
       .tasks-group-title.overdue { color: var(--rose-deep); }
@@ -1633,7 +1604,6 @@
           <button class="history-btn" id="historyBtn" type="button" aria-label="History" title="History">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
           </button>
-          <button class="mylist-btn" id="myListBtn" type="button" aria-label="My List" aria-expanded="true" title="My List — tap to collapse or open">My List<span class="mylist-badge" id="myListBadge" hidden>0</span><svg class="mylist-chev" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           <button class="clear-btn" id="clearBtn" type="button" disabled aria-label="New chat" title="New chat">New chat</button>
           <button class="lock-btn" id="lockBtn" type="button" hidden aria-label="Lock" title="Lock">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -1650,7 +1620,6 @@
     </div>
 
     <div class="tasks-banner" id="tasksBanner" hidden><div class="tasks-banner-inner"><p id="tasksBannerText"></p><button class="tasks-banner-dismiss" id="tasksBannerDismiss" type="button" aria-label="Dismiss reminders">×</button></div></div>
-    <div class="layout-row"><div class="chat-col">
     <main id="scroller">
       <div class="ptr" id="ptr" aria-hidden="true">
         <span class="ptr-pill">
@@ -1692,11 +1661,13 @@
         </form>
       </div>
     </footer>
-    </div>
-    <aside class="tasks-sidebar" id="tasksSidebar" aria-label="My List"><div class="tasks-head"><div class="tasks-head-title"><h2>My List</h2><span class="mylist-badge tasks-section-badge" id="tasksSidebarBadge" hidden>0</span></div><button class="tasks-collapse-toggle" type="button" data-collapse-toggle aria-expanded="true" aria-label="Collapse My List" title="Collapse My List"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div><button class="tasks-add-btn" type="button" data-add-task>+ Add task</button><div class="tasks-list" id="tasksListSidebar"></div></aside>
-    </div>
 
-    <div class="tasks-overlay" id="tasksOverlay" hidden><div class="tasks-panel" role="dialog" aria-modal="true" aria-labelledby="tasksTitle"><div class="tasks-head"><div class="tasks-head-title"><h2 id="tasksTitle">My List</h2><span class="mylist-badge tasks-section-badge" id="tasksPanelBadge" hidden>0</span></div><div class="tasks-head-actions"><button class="tasks-collapse-toggle" type="button" data-collapse-toggle aria-expanded="true" aria-label="Collapse My List" title="Collapse My List"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><button class="tasks-close" id="tasksClose" type="button" aria-label="Close My List">×</button></div></div><button class="tasks-add-btn" type="button" data-add-task>+ Add task</button><div class="tasks-list" id="tasksListPanel"></div></div></div>
+    <button class="tasks-fab" id="tasksFab" type="button" aria-label="My List — show or hide" aria-expanded="false" aria-controls="tasksDrawer" title="My List">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>
+      <span class="mylist-badge" id="tasksFabBadge" hidden>0</span>
+    </button>
+    <div class="tasks-backdrop" id="tasksBackdrop" aria-hidden="true"></div>
+    <aside class="tasks-drawer" id="tasksDrawer" role="dialog" aria-modal="true" aria-labelledby="tasksTitle" aria-label="My List" aria-hidden="true"><div class="tasks-head"><div class="tasks-head-title"><h2 id="tasksTitle">My List</h2><span class="mylist-badge" id="tasksPanelBadge" hidden>0</span></div><button class="tasks-close" id="tasksClose" type="button" aria-label="Close My List">×</button></div><button class="tasks-add-btn" type="button" data-add-task>+ Add task</button><div class="tasks-list" id="tasksListPanel"></div></aside>
 
     <div class="task-form-overlay" id="taskFormOverlay" hidden><div class="task-form-card" role="dialog" aria-modal="true" aria-labelledby="taskFormTitle"><h3 id="taskFormTitle">Add task</h3><form id="taskForm"><div class="task-field"><label for="taskTitleInput">Title *</label><input id="taskTitleInput" type="text" required autocomplete="off" /></div><div class="task-field"><label for="taskSubjectInput">Subject</label><input id="taskSubjectInput" type="text" autocomplete="off" placeholder="e.g. EDUC 112" /><div class="subject-chips" id="subjectChips"></div></div><div class="task-field"><label for="taskDateInput">Due date</label><input id="taskDateInput" type="date" /></div><div class="task-field"><label for="taskTimeInput">Time (optional)</label><input id="taskTimeInput" type="time" /></div><div class="task-field"><label for="taskNotesInput">Notes</label><textarea id="taskNotesInput" placeholder="Optional note"></textarea></div><div class="task-form-actions"><button class="task-cancel" id="taskCancel" type="button">Cancel</button><button class="task-save" id="taskSave" type="submit">Save task</button></div><button class="task-delete" id="taskDelete" type="button" hidden>Delete task</button></form></div></div>
 
@@ -1824,18 +1795,16 @@
         var installHintText = document.getElementById("installHintText");
         var installDismiss = document.getElementById("installDismiss");
         var TASKS_URL = "https://vagijhlfaflssatfavqp.supabase.co/rest/v1/tasks";
-        var myListBtn = document.getElementById("myListBtn");
-        var myListBadge = document.getElementById("myListBadge");
+        var tasksFab = document.getElementById("tasksFab");
+        var tasksFabBadge = document.getElementById("tasksFabBadge");
         var tasksBanner = document.getElementById("tasksBanner");
         var tasksBannerText = document.getElementById("tasksBannerText");
         var tasksBannerDismiss = document.getElementById("tasksBannerDismiss");
-        var tasksOverlay = document.getElementById("tasksOverlay");
+        var tasksBackdrop = document.getElementById("tasksBackdrop");
+        var tasksDrawer = document.getElementById("tasksDrawer");
         var tasksClose = document.getElementById("tasksClose");
         var tasksListPanel = document.getElementById("tasksListPanel");
-        var tasksListSidebar = document.getElementById("tasksListSidebar");
-        var tasksSidebarBadge = document.getElementById("tasksSidebarBadge");
         var tasksPanelBadge = document.getElementById("tasksPanelBadge");
-        var collapseToggles = document.querySelectorAll("[data-collapse-toggle]");
         var taskFormOverlay = document.getElementById("taskFormOverlay");
         var taskForm = document.getElementById("taskForm");
         var taskFormTitle = document.getElementById("taskFormTitle");
@@ -1854,34 +1823,19 @@
         var doneExpanded = false;
         var editingTaskId = null;
         var deleteArmed = false;
-        try { if (localStorage.getItem("mylist-collapsed") === "1") document.body.classList.add("tasks-collapsed"); } catch (e) {}
-        /* One shared collapse state for the whole My List section:
-           the page header's My List button, the mobile panel's
-           chevron and the laptop sidebar's chevron all read and
-           flip this same flag, persisted on the device so her
-           choice survives reloads. */
-        var mylistCollapsed = document.body.classList.contains("tasks-collapsed");
-        function syncCollapseUI() {
-          collapseToggles.forEach(function (b) {
-            b.setAttribute("aria-expanded", String(!mylistCollapsed));
-            b.setAttribute("aria-label", mylistCollapsed ? "Expand My List" : "Collapse My List");
-            b.setAttribute("title", mylistCollapsed ? "Expand My List" : "Collapse My List");
-          });
-          if (myListBtn) myListBtn.setAttribute("aria-expanded", String(!mylistCollapsed));
+        /* My List lives in a slide-in drawer, hidden completely by
+           default so the page is just the chat, exactly as it was
+           before My List. One in-memory flag drives the drawer, the
+           backdrop and the floating edge tab; nothing is persisted,
+           so the panel always starts hidden on load and on unlock. */
+        var tasksOpen = false;
+        function setTasksOpen(open) {
+          tasksOpen = !!open;
+          document.body.classList.toggle("tasks-open", tasksOpen);
+          if (tasksDrawer) tasksDrawer.setAttribute("aria-hidden", String(!tasksOpen));
+          if (tasksFab) tasksFab.setAttribute("aria-expanded", String(tasksOpen));
+          if (tasksOpen) loadTasks();
         }
-        function setMylistCollapsed(collapsed) {
-          mylistCollapsed = !!collapsed;
-          document.body.classList.toggle("tasks-collapsed", mylistCollapsed);
-          try { localStorage.setItem("mylist-collapsed", mylistCollapsed ? "1" : "0"); } catch (e) {}
-          syncCollapseUI();
-        }
-        collapseToggles.forEach(function (b) {
-          b.addEventListener("click", function () {
-            setMylistCollapsed(!mylistCollapsed);
-            if (!mylistCollapsed) loadTasks();
-          });
-        });
-        syncCollapseUI();
 
         /* ---------- Passcode autofill guard ----------
            Chrome (and other browsers) treat this field as a saved
@@ -2061,10 +2015,9 @@
           var overdue=0, dueToday=0, dueTomorrow=0;
           allTasks.forEach(function(t){ if(t.status!=="open"||!t.due_date) return; if(t.due_date<today) overdue++; else if(t.due_date===today) dueToday++; else if(t.due_date===tomorrow) dueTomorrow++; });
           var badgeCount=overdue+dueToday;
-          [myListBadge, tasksSidebarBadge, tasksPanelBadge].forEach(function (bd) {
-            if (!bd) return;
-            if (badgeCount > 0) { bd.textContent = String(badgeCount); bd.hidden = false; } else bd.hidden = true;
-          });
+          if (tasksPanelBadge) { if (badgeCount > 0) { tasksPanelBadge.textContent = String(badgeCount); tasksPanelBadge.hidden = false; } else tasksPanelBadge.hidden = true; }
+          var fabCount=overdue+dueToday+dueTomorrow;
+          if (tasksFabBadge) { if (fabCount > 0) { tasksFabBadge.textContent = String(fabCount); tasksFabBadge.hidden = false; } else tasksFabBadge.hidden = true; }
           if(tasksBanner){ if(bannerDismissed||(overdue+dueToday+dueTomorrow===0)){ tasksBanner.hidden=true; } else { var parts=[]; if(overdue) parts.push(overdue+" overdue"); if(dueToday) parts.push(dueToday+" due today"); if(dueTomorrow) parts.push(dueTomorrow+" due tomorrow"); tasksBannerText.innerHTML=""; var s=document.createElement("strong"); s.textContent="My List: "; tasksBannerText.appendChild(s); tasksBannerText.appendChild(document.createTextNode(parts.join(" · "))); tasksBanner.hidden=false; } }
         }
         function buildTaskList(container){
@@ -2096,7 +2049,7 @@
           }
           if(!grouped.groups.some(function(g){return g.items.length;}) && !grouped.done.length){ var em2=document.createElement("div"); em2.className="tasks-empty"; em2.textContent="Nothing here yet — tell Tonyo in chat, or tap + Add task."; container.appendChild(em2); }
         }
-        function renderTasks(){ if(tasksListPanel) buildTaskList(tasksListPanel); if(tasksListSidebar) buildTaskList(tasksListSidebar); updateBadgeAndBanner(); }
+        function renderTasks(){ if(tasksListPanel) buildTaskList(tasksListPanel); updateBadgeAndBanner(); }
         function loadTasks(){
           if(!unlocked||!API_KEY||!THREAD_TOKEN) return Promise.resolve();
           return nativeFetch(TASKS_URL+"?select=*&order=created_at.asc",{headers:headers()}).then(function(r){ if(!r.ok) throw new Error("tasks "+r.status); return r.json(); }).then(function(rows){ allTasks=rows||[]; tasksLoaded=true; tasksError=false; renderTasks(); }).catch(function(){ tasksError=true; renderTasks(); });
@@ -2125,9 +2078,10 @@
         if(taskFormOverlay) taskFormOverlay.addEventListener("click",function(e){ if(e.target===taskFormOverlay) closeTaskForm(); });
         if(taskDelete) taskDelete.addEventListener("click",function(){ if(!editingTaskId) return; if(!deleteArmed){ deleteArmed=true; taskDelete.textContent="Confirm delete"; taskDelete.classList.add("confirm"); return; } nativeFetch(TASKS_URL+"?id=eq."+editingTaskId,{method:"DELETE",headers:headers({"Prefer":"return=minimal"})}).then(function(){ closeTaskForm(); loadTasks(); }).catch(function(){ closeTaskForm(); }); });
         document.querySelectorAll("[data-add-task]").forEach(function(b){ b.addEventListener("click",function(){ openTaskForm(null); }); });
-        function openTasksPanel(){ if(window.innerWidth>=1024){ setMylistCollapsed(!mylistCollapsed); if(!mylistCollapsed) loadTasks(); return; } renderTasks(); if(tasksOverlay) tasksOverlay.hidden=false; loadTasks(); }
-        if(myListBtn) myListBtn.addEventListener("click",openTasksPanel);
-        if(tasksClose) tasksClose.addEventListener("click",function(){ tasksOverlay.hidden=true; });
+        if(tasksFab) tasksFab.addEventListener("click",function(){ setTasksOpen(!tasksOpen); });
+        if(tasksBackdrop) tasksBackdrop.addEventListener("click",function(){ setTasksOpen(false); });
+        if(tasksClose) tasksClose.addEventListener("click",function(){ setTasksOpen(false); });
+        document.addEventListener("keydown",function(e){ if(tasksOpen && (e.key==="Escape"||e.key==="Esc")) setTasksOpen(false); });
         if(tasksBannerDismiss) tasksBannerDismiss.addEventListener("click",function(){ bannerDismissed=true; if(tasksBanner) tasksBanner.hidden=true; });
 
         /* ---------- Passcode gate ---------- */
@@ -2240,11 +2194,12 @@
           if (lockBtn) lockBtn.hidden = true;
           if (clearOverlay) clearOverlay.hidden = true;
           if (historyOverlay) historyOverlay.hidden = true;
-          if (tasksOverlay) tasksOverlay.hidden = true;
+          setTasksOpen(false);
           if (taskFormOverlay) taskFormOverlay.hidden = true;
           if (tasksBanner) tasksBanner.hidden = true;
           allTasks = []; tasksLoaded = false; tasksError = false; bannerDismissed = false;
-          if (myListBadge) myListBadge.hidden = true;
+          if (tasksFabBadge) tasksFabBadge.hidden = true;
+          if (tasksPanelBadge) tasksPanelBadge.hidden = true;
           allRows = [];
           expandedSessions = {};
           passcodeInput.value = "";
