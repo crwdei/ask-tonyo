@@ -723,8 +723,9 @@
 
       /* Voice-typing button: same round icon-button look as Attach.
          It stays hidden in the markup and JS only reveals it when
-         the browser actually offers speech recognition, so on an
-         unsupported browser the composer looks exactly as before. */
+         the browser can record audio (getUserMedia + MediaRecorder),
+         so on an unsupported browser the composer looks exactly as
+         before. */
       .mic-btn {
         flex: 0 0 auto;
         width: 48px;
@@ -749,26 +750,23 @@
       .mic-btn:active { transform: scale(0.97); }
       .mic-btn svg { width: 20px; height: 20px; display: block; }
 
-      /* Dictation language chip: compact pill next to the mic
-         button, matching the composer's small controls. Hidden
-         in markup and revealed by JS only together with the mic
-         button when speech recognition is supported. */
-      .mic-lang-chip {
+      /* Recording timer: small pill beside the mic button, shown
+         only while a recording is running, counting up m:ss to
+         the 2:00 auto-stop. */
+      .mic-timer {
         flex: 0 0 auto;
-        /* Bottom-aligned with the 48px button row (the 6px margin
-           optically centres the 36px chip against those buttons),
-           so when the textarea grows the chip stays down with the
-           paperclip / mic / Send instead of floating mid-box. */
+        /* Bottom-aligned with the 48px button row, like the other
+           small composer controls, so it stays down with the
+           buttons when the textarea grows. */
         align-self: flex-end;
         margin-bottom: 6px;
         height: 36px;
         min-height: 36px;
         padding: 0 10px;
         border-radius: 999px;
-        background: var(--cream);
-        border: 1.5px solid var(--line);
+        background: var(--rose-soft);
+        border: 1.5px solid var(--blush);
         color: var(--rose-deep);
-        font: inherit;
         font-size: 12.5px;
         font-weight: 600;
         line-height: 1;
@@ -776,24 +774,12 @@
         align-items: center;
         justify-content: center;
         white-space: nowrap;
-        cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
-        touch-action: manipulation;
-        user-select: none;
-        -webkit-user-select: none;
+        font-variant-numeric: tabular-nums;
       }
 
-      .mic-lang-chip[hidden] { display: none !important; }
-      .mic-lang-chip:hover { background: var(--rose-soft); border-color: var(--blush); }
-      .mic-lang-chip:active { transform: scale(0.97); }
+      .mic-timer[hidden] { display: none !important; }
 
-      .composer.is-uploading .mic-lang-chip {
-        opacity: 0.5;
-        pointer-events: none;
-        cursor: default;
-      }
-
-      /* Listening state: solid rose with a soft pulsing ring, so it
+      /* Recording state: solid rose with a soft pulsing ring, so it
          is obvious the mic is live until she taps it off. */
       .mic-btn.is-listening {
         background: var(--rose);
@@ -1440,7 +1426,7 @@
         footer { padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)); }
         .composer { gap: var(--space-2); }
         .attach-btn { width: 48px; height: 48px; }
-        .mic-lang-chip { height: 34px; min-height: 34px; margin-bottom: 7px; padding: 0 8px; font-size: 12px; }
+        .mic-timer { height: 34px; min-height: 34px; margin-bottom: 7px; padding: 0 8px; font-size: 12px; }
         textarea { padding: 12px 14px; border-radius: 22px; }
         .send-btn { min-width: 68px; padding: 12px 18px; font-size: 15px; }
         .error-note { font-size: 12.5px; padding: 8px 10px; }
@@ -1593,7 +1579,7 @@
           <button class="mic-btn" id="micBtn" type="button" hidden aria-label="Voice typing — tap and speak" aria-pressed="false" title="Voice typing">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
           </button>
-          <button class="mic-lang-chip" id="micLangBtn" type="button" hidden aria-label="Dictation language: Bisaya — tap to change" title="Dictation language">Bisaya</button>
+          <span class="mic-timer" id="micTimer" hidden aria-hidden="true">0:00</span>
           <textarea id="input" rows="1" placeholder="Type your message…" aria-label="Type your message" autocomplete="off" autocapitalize="sentences" enterkeyhint="send"></textarea>
           <button class="send-btn" id="sendBtn" type="submit">Send</button>
         </form>
@@ -1701,7 +1687,7 @@
         var attachBtn = document.getElementById("attachBtn");
         var fileInput = document.getElementById("fileInput");
         var micBtn = document.getElementById("micBtn");
-        var micLangBtn = document.getElementById("micLangBtn");
+        var micTimerEl = document.getElementById("micTimer");
         var micNote = document.getElementById("micNote");
         var clearBtn = document.getElementById("clearBtn");
         var clearOverlay = document.getElementById("clearOverlay");
@@ -1966,7 +1952,7 @@
            and whenever the inbox rejects the credentials in memory —
            fail closed: a bad token re-prompts instead of half-working. */
         function relock(message) {
-          stopDictation();
+          haltMic();
           unlocked = false;
           unlocking = false;
           /* Overwrite before dropping, so the strings are not left
@@ -2778,10 +2764,10 @@
           var text = input.value.trim();
           if (sending || uploading || clearing || !unlocked) return;
           if (!text && !stagedFiles.length) return;
-          /* Sending ends any live dictation — the words on screen
-             (including a phrase still being recognised) are what
-             goes out, and the mic never keeps running afterwards. */
-          stopDictation();
+          /* Sending halts any live recording — the words on screen
+             are what goes out, and the mic never keeps running
+             afterwards. */
+          haltMic();
           /* Files staged in the composer go out together with
              whatever she typed, as one message. */
           if (stagedFiles.length) { sendWithFiles(text); return; }
@@ -3232,89 +3218,45 @@
           });
         }
 
-        /* ---------- Voice dictation ----------
-           The mic button dictates into the message box using the
-           browser's own speech recognition (Web Speech API) —
-           nothing is recorded or uploaded by this page, and nothing
-           is ever auto-sent: words land in the textarea as a draft
-           she can read, fix, and send herself. Dictation APPENDS to
-           whatever she already typed, so it doubles as the
-           instruction text when files are staged.
-           Support: Chrome on Android/desktop offers it; browsers
-           without it keep the button hidden and the composer is
-           exactly as it was. */
-        var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-        var micWanted = false;   // she tapped it on and hasn't tapped it off
-        var micRec = null;       // the live recognition instance, if any
-        /* Dictation language chain: a recognition session listens
-           in ONE language, so the default order is Cebuano first,
-           then Filipino, then English — on a
-           'language-not-supported' error the next in the chain is
-           tried, the same mid-startup fallback the old fil→en
-           chain used. A manual chip choice (below) wins over this
-           auto chain as the starting language until she changes
-           it again, and is remembered in localStorage. */
-        var MIC_LANG_CHAIN = ["ceb-PH", "fil-PH", "en-US"];
-        var MIC_LANG_LABELS = { "ceb-PH": "Bisaya", "fil-PH": "Tagalog", "en-US": "English" };
-        var MIC_LANG_STORAGE_KEY = "ask-tonyo-mic-lang";
-        var micLang = "ceb-PH";  // first choice in the auto chain
-        var micLangManual = false;
-        try {
-          var savedMicLang = window.localStorage ? window.localStorage.getItem(MIC_LANG_STORAGE_KEY) : null;
-          if (savedMicLang && MIC_LANG_CHAIN.indexOf(savedMicLang) !== -1) {
-            micLang = savedMicLang;
-            micLangManual = true;
-          }
-        } catch (e) { /* storage unavailable: session-only choice still works */ }
-        var micBase = "";        // draft text the live session builds on
-        var micFinals = "";      // finalised words from the live instance
+        /* ---------- Voice input (MediaRecorder) ----------
+           The mic button records a short clip with MediaRecorder
+           and posts it to the transcribe-audio Edge Function,
+           which answers { text }. The words land in the textarea
+           as a draft she can read, fix, and send herself — voice
+           input is NEVER auto-sent, and it APPENDS to whatever she
+           already typed, so it doubles as the instruction text
+           when files are staged.
+           Support: browsers with getUserMedia + MediaRecorder
+           (Chrome on Android/desktop) get the button; anywhere
+           else it stays hidden and the composer is exactly as it
+           was. The mic stream's tracks are stopped the moment
+           recording ends, so the microphone is never held open
+           while the clip is being transcribed. */
+        var TRANSCRIBE_URL = "https://vagijhlfaflssatfavqp.supabase.co/functions/v1/transcribe-audio";
+        /* First MIME type the recorder accepts wins — webm/opus is
+           what Chrome on Android produces; mp4 covers Safari. If
+           none match, the recorder is built with no mimeType and
+           its own reported type is used for the upload. */
+        var MIC_MIME_CANDIDATES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+        var MIC_MAX_MS = 120000; // recording auto-stops at 2:00
+        var micSupported = !!(
+          navigator.mediaDevices &&
+          typeof navigator.mediaDevices.getUserMedia === "function" &&
+          window.MediaRecorder
+        );
+        var micState = "idle";   // idle | starting | recording | transcribing
+        var micStream = null;
+        var micRecorder = null;
+        var micChunks = [];
+        var micMimeType = "";
+        var micTimerId = null;
+        var micStartedAt = 0;
+        /* Bumped whenever a session is halted from outside (Send,
+           Lock), so a take or transcription that finishes afterwards
+           knows its words are no longer wanted and drops them. */
+        var micGeneration = 0;
         var micNoteTimer = null;
         var MIC_PLACEHOLDER = input.getAttribute("placeholder") || "Type your message…";
-
-        function micLangLabel(code) {
-          return MIC_LANG_LABELS[code] || "Bisaya";
-        }
-
-        function updateMicLangChip() {
-          if (!micLangBtn) return;
-          var label = micLangLabel(micLang);
-          micLangBtn.textContent = label;
-          micLangBtn.setAttribute("aria-label", "Dictation language: " + label + " — tap to change");
-        }
-
-        /* Set the effective dictation language. A manual choice
-           is persisted so the page remembers it next visit; an
-           automatic fallback move is not persisted over a manual
-           choice she already made. */
-        function setMicLang(code, manual) {
-          if (MIC_LANG_CHAIN.indexOf(code) === -1) return;
-          micLang = code;
-          if (manual) {
-            micLangManual = true;
-            try {
-              if (window.localStorage) window.localStorage.setItem(MIC_LANG_STORAGE_KEY, code);
-            } catch (e) { /* keep the in-memory choice for this session */ }
-          }
-          updateMicLangChip();
-        }
-
-        /* Cycle Bisaya → Tagalog → English → Bisaya. Mid-dictation,
-           stopping the live instance lets its onend fold committed
-           words into micBase and auto-restart — and the restart
-           builds a fresh instance with the newly chosen language,
-           so already-dictated text stays in the box. */
-        function cycleMicLang() {
-          var idx = MIC_LANG_CHAIN.indexOf(micLang);
-          if (idx === -1) idx = 0;
-          var next = MIC_LANG_CHAIN[(idx + 1) % MIC_LANG_CHAIN.length];
-          setMicLang(next, true);
-          if (micWanted && micRec) {
-            try { micRec.stop(); } catch (err) {}
-          }
-          /* If micWanted is true but micRec is momentarily null
-             (between Android auto-restarts), the pending restart
-             picks up the new micLang on its own. */
-        }
 
         function showMicNote(text) {
           if (!micNote) return;
@@ -3322,6 +3264,16 @@
           micNote.textContent = text;
           micNote.classList.add("show");
           micNoteTimer = setTimeout(hideMicNote, 6000);
+        }
+
+        /* Same note, but it stays up until the flow resolves it —
+           used for the "Transcribing…" state so a slow connection
+           never leaves her staring at a note that already vanished. */
+        function showMicBusy(text) {
+          if (!micNote) return;
+          if (micNoteTimer) { clearTimeout(micNoteTimer); micNoteTimer = null; }
+          micNote.textContent = text;
+          micNote.classList.add("show");
         }
 
         function hideMicNote() {
@@ -3332,8 +3284,8 @@
         }
 
         /* Join two pieces of text with exactly one space when both
-           sides need one — dictated chunks never glue onto the word
-           before them and never double the spaces. */
+           sides need one — a transcript never glues onto the word
+           before it and never doubles the spaces. */
         function joinText(base, add) {
           if (!add) return base || "";
           if (!base) return add;
@@ -3341,190 +3293,263 @@
           return base + (needsSpace ? " " : "") + add;
         }
 
-        function renderDictation(interim) {
-          input.value = joinText(joinText(micBase, micFinals), interim || "");
-          autosize();
+        function formatMicTime(ms) {
+          var total = Math.floor(ms / 1000);
+          var m = Math.floor(total / 60);
+          var s = total % 60;
+          return m + ":" + (s < 10 ? "0" : "") + s;
         }
 
         function setMicUI() {
+          var recording = micState === "recording";
+          var busy = micState === "starting" || micState === "transcribing";
           if (micBtn) {
-            micBtn.classList.toggle("is-listening", micWanted);
-            micBtn.setAttribute("aria-pressed", micWanted ? "true" : "false");
-            micBtn.setAttribute("aria-label", micWanted ? "Stop voice typing" : "Voice typing — tap and speak");
+            micBtn.classList.toggle("is-listening", recording);
+            micBtn.classList.toggle("disabled", busy);
+            micBtn.setAttribute("aria-pressed", recording ? "true" : "false");
+            micBtn.setAttribute("aria-label",
+              micState === "transcribing" ? "Transcribing your voice note" :
+              recording ? "Stop recording" : "Voice typing — tap and speak");
           }
-          input.setAttribute("placeholder", micWanted ? "Listening… speak now" : MIC_PLACEHOLDER);
+          if (micTimerEl) micTimerEl.hidden = !recording;
+          input.setAttribute("placeholder",
+            recording ? "Recording… tap the mic when you're done" :
+            micState === "transcribing" ? "Transcribing…" : MIC_PLACEHOLDER);
         }
 
-        function createRecognition() {
-          var rec = new SpeechRecognitionCtor();
-          var isAndroid = /Android/i.test(navigator.userAgent || "");
-          rec.continuous = !isAndroid;
-          rec.interimResults = true;
-          rec.lang = micLang;
-          /* Append-once state for THIS instance only. A fresh
-             instance (including the onend auto-restart on Android)
-             starts with an empty processed index and no previous
-             chunk, and micFinals is reset by onend when the prior
-             instance folds into micBase — so restarts append only
-             their own new finals and never replay old ones. */
-          var processedIndex = 0;
-          var lastCommittedChunk = "";
-          rec.onresult = function (event) {
-            var interim = "";
-            var startIdx = (typeof event.resultIndex === "number") ? event.resultIndex : 0;
-            if (startIdx < processedIndex) startIdx = processedIndex;
-            for (var i = startIdx; i < event.results.length; i++) {
-              if (i < processedIndex) continue;
-              var res = event.results[i];
-              var t = res[0] ? res[0].transcript : "";
-              if (res.isFinal) {
-                processedIndex = i + 1;
-                var chunk = t ? t.trim() : "";
-                /* (a) empty / whitespace only — skip. */
-                if (!chunk) continue;
-                /* (d) exactly the immediately previous chunk — skip. */
-                if (lastCommittedChunk && chunk === lastCommittedChunk) continue;
-                var committed = joinText(micBase, micFinals).trim();
-                /* (c) Android replay: the new final starts with the
-                   whole committed text — append only the remainder. */
-                if (committed && chunk.length > committed.length && chunk.indexOf(committed) === 0) {
-                  var remFull = chunk.slice(committed.length).trim();
-                  if (!remFull) continue;
-                  micFinals = joinText(micFinals, remFull);
-                  lastCommittedChunk = chunk;
-                  interim = "";
-                  continue;
-                }
-                /* (c) Android replay: the new final starts with the
-                   last committed chunk — append only the remainder. */
-                if (lastCommittedChunk && chunk.length > lastCommittedChunk.length && chunk.indexOf(lastCommittedChunk) === 0) {
-                  var remLast = chunk.slice(lastCommittedChunk.length).trim();
-                  if (!remLast) continue;
-                  micFinals = joinText(micFinals, remLast);
-                  lastCommittedChunk = chunk;
-                  interim = "";
-                  continue;
-                }
-                /* (b) committed text already ends with this chunk — skip. */
-                if (committed && committed.slice(-chunk.length) === chunk) continue;
-                micFinals = joinText(micFinals, chunk);
-                lastCommittedChunk = chunk;
-                interim = "";
-              } else {
-                /* Interim: only the LATEST interim entry is the live
-                   tail — replace, never concatenate. */
-                interim = t || "";
-              }
-            }
-            renderDictation(interim);
-          };
-          rec.onerror = function (event) {
-            var code = event && event.error ? event.error : "";
-            if (code === "language-not-supported") {
-              /* Current language isn't offered here — quietly move
-                 to the next in the chain (ceb-PH → fil-PH → en-US);
-                 the onend below restarts with that language. The
-                 move is not persisted over a manual chip choice. */
-              var langIdx = MIC_LANG_CHAIN.indexOf(micLang);
-              if (langIdx !== -1 && langIdx < MIC_LANG_CHAIN.length - 1) {
-                micLang = MIC_LANG_CHAIN[langIdx + 1];
-                updateMicLangChip();
+        function startMicTimer() {
+          stopMicTimer();
+          micStartedAt = Date.now();
+          if (micTimerEl) micTimerEl.textContent = "0:00";
+          micTimerId = setInterval(function () {
+            var elapsed = Date.now() - micStartedAt;
+            if (micTimerEl) micTimerEl.textContent = formatMicTime(elapsed);
+            if (elapsed >= MIC_MAX_MS) stopMicRecording();
+          }, 250);
+        }
+
+        function stopMicTimer() {
+          if (micTimerId) { clearInterval(micTimerId); micTimerId = null; }
+        }
+
+        /* Stop every track on the live stream so the mic light
+           goes off and the device is released, whatever state the
+           recorder itself is in. */
+        function releaseMicTracks() {
+          if (!micStream) return;
+          try {
+            micStream.getTracks().forEach(function (t) {
+              try { t.stop(); } catch (e) {}
+            });
+          } catch (e) {}
+          micStream = null;
+        }
+
+        function pickMicMimeType() {
+          if (!window.MediaRecorder || typeof MediaRecorder.isTypeSupported !== "function") return "";
+          for (var i = 0; i < MIC_MIME_CANDIDATES.length; i++) {
+            try {
+              if (MediaRecorder.isTypeSupported(MIC_MIME_CANDIDATES[i])) return MIC_MIME_CANDIDATES[i];
+            } catch (e) {}
+          }
+          return "";
+        }
+
+        function startMicRecording() {
+          if (!micSupported || micState !== "idle") return;
+          hideMicNote();
+          micState = "starting";
+          setMicUI();
+          var gen = ++micGeneration;
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function (stream) {
+              if (gen !== micGeneration) {
+                /* Halted while the permission prompt was up — hand
+                   the mic straight back. */
+                try {
+                  stream.getTracks().forEach(function (t) {
+                    try { t.stop(); } catch (e) {}
+                  });
+                } catch (e) {}
                 return;
               }
-              micWanted = false;
-              showMicNote("Voice typing is not available in this browser — open this page in Chrome to use it.");
-              return;
-            }
-            if (code === "not-allowed") {
-              micWanted = false;
-              showMicNote("Voice typing needs mic permission — allow the microphone for this page, then tap the mic again.");
-            } else if (code === "service-not-allowed") {
-              micWanted = false;
-              showMicNote("Voice typing is not available in this browser — open this page in Chrome to use it.");
-            } else if (code === "audio-capture") {
-              micWanted = false;
-              showMicNote("No microphone found — voice typing can't start.");
-            } else if (code === "network") {
-              micWanted = false;
-              showMicNote("Voice typing needs an internet connection — check your connection and try again.");
-            }
-            /* "no-speech" and "aborted" need no note: onend either
-               restarts (still toggled on) or settles quietly. */
-          };
-          rec.onend = function () {
-            /* Fold this instance's final words into the base before
-               any restart: a fresh instance starts with an empty
-               result list, so without this the words would vanish
-               or repeat. */
-            micBase = joinText(micBase, micFinals);
-            micFinals = "";
-            micRec = null;
-            if (micWanted) {
-              /* Android Chrome stops after a pause even in
-                 continuous mode — if she hasn't tapped stop, start
-                 again so she can keep talking. */
-              setTimeout(function () { if (micWanted && !micRec) startRecognition(); }, 120);
-            } else {
+              micStream = stream;
+              micChunks = [];
+              var mime = pickMicMimeType();
+              var rec = null;
+              try {
+                rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+              } catch (err) { rec = null; }
+              if (!rec) {
+                releaseMicTracks();
+                micState = "idle";
+                setMicUI();
+                showMicNote("Voice typing is not available in this browser — typing still works just fine.");
+                return;
+              }
+              micRecorder = rec;
+              micMimeType = rec.mimeType || mime || "";
+              rec.ondataavailable = function (event) {
+                if (event.data && event.data.size) micChunks.push(event.data);
+              };
+              rec.onerror = function () {
+                if (micState !== "recording") return;
+                stopMicTimer();
+                releaseMicTracks();
+                micRecorder = null;
+                micChunks = [];
+                micState = "idle";
+                setMicUI();
+                showMicNote("Recording hit a snag — tap the mic and try again.");
+              };
+              rec.onstop = function () { onMicRecorderStop(gen); };
+              try {
+                rec.start();
+              } catch (err) {
+                releaseMicTracks();
+                micRecorder = null;
+                micState = "idle";
+                setMicUI();
+                showMicNote("Recording couldn't start — tap the mic and try again.");
+                return;
+              }
+              micState = "recording";
               setMicUI();
-            }
-          };
-          return rec;
+              startMicTimer();
+            })
+            .catch(function (err) {
+              if (gen !== micGeneration) return;
+              micState = "idle";
+              setMicUI();
+              var name = err && err.name ? err.name : "";
+              if (name === "NotAllowedError" || name === "SecurityError") {
+                showMicNote("Voice typing needs mic permission — allow the microphone for this page, then tap the mic again.");
+              } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+                showMicNote("No microphone found — voice typing can't start.");
+              } else {
+                showMicNote("Voice typing couldn't start — check your connection and try again.");
+              }
+            });
         }
 
-        function startRecognition() {
-          if (!SpeechRecognitionCtor || micRec) return;
+        function stopMicRecording() {
+          if (micState !== "recording" || !micRecorder) return;
+          stopMicTimer();
+          var rec = micRecorder;
           try {
-            micRec = createRecognition();
-            micRec.start();
+            rec.stop();
           } catch (err) {
-            micRec = null;
-            micWanted = false;
+            micRecorder = null;
+            releaseMicTracks();
+            micChunks = [];
+            micState = "idle";
             setMicUI();
-            showMicNote("Voice typing is not available in this browser — open this page in Chrome to use it.");
+            showMicNote("Didn't catch that — tap the mic and try again.");
+            return;
           }
+          /* Release the microphone IMMEDIATELY — the recorder's
+             onstop fires on its own with the chunks it captured,
+             and the mic must not stay held while we wait for it. */
+          releaseMicTracks();
+          micState = "transcribing";
+          setMicUI();
         }
 
-        function startDictation() {
-          hideMicNote();
-          micBase = input.value;
-          micFinals = "";
-          micWanted = true;
+        function onMicRecorderStop(gen) {
+          var type = micMimeType || "audio/webm";
+          var chunks = micChunks;
+          micChunks = [];
+          micRecorder = null;
+          releaseMicTracks(); // belt and braces — tracks are already stopped
+          if (gen !== micGeneration) {
+            /* Halted (Send / Lock) mid-take: the recording is
+               discarded, nothing is uploaded. */
+            if (micState === "transcribing") { micState = "idle"; setMicUI(); }
+            return;
+          }
+          var blob = new Blob(chunks, { type: type });
+          if (!blob.size) {
+            micState = "idle";
+            setMicUI();
+            showMicNote("Didn't catch that — tap the mic and try again.");
+            return;
+          }
+          micState = "transcribing";
           setMicUI();
-          startRecognition();
+          showMicBusy("Transcribing…");
+          nativeFetch(TRANSCRIBE_URL, {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + API_KEY,
+              "apikey": API_KEY,
+              "x-thread-token": THREAD_TOKEN,
+              "Content-Type": blob.type || type
+            },
+            body: blob
+          })
+            .then(function (res) {
+              if (!res.ok) {
+                var err = new Error("transcribe " + res.status);
+                err.status = res.status;
+                throw err;
+              }
+              return res.json();
+            })
+            .then(function (data) {
+              if (gen !== micGeneration) return;
+              micState = "idle";
+              setMicUI();
+              var text = data && typeof data.text === "string" ? data.text.trim() : "";
+              if (text) {
+                hideMicNote();
+                input.value = joinText(input.value, text);
+                autosize();
+                input.focus();
+              } else {
+                showMicNote("Didn't catch that — tap the mic and try speaking again.");
+              }
+            })
+            .catch(function () {
+              if (gen !== micGeneration) return;
+              micState = "idle";
+              setMicUI();
+              showMicNote("Couldn't transcribe that — check your connection and try again.");
+            });
         }
 
         /* Function declaration (hoisted) so send() and relock() —
-           defined earlier in this file — can stop a live dictation
-           too. Whatever is on screen stays as the draft. */
-        function stopDictation() {
-          if (!micWanted && !micRec) { setMicUI(); return; }
-          micWanted = false;
-          setMicUI();
-          if (micRec) {
-            try { micRec.stop(); } catch (err) {}
+           defined earlier in this file — can halt voice input too.
+           Any live take is discarded and any in-flight transcript
+           is dropped when it lands: the words already in the box
+           are the draft that counts. */
+        function haltMic() {
+          micGeneration += 1;
+          stopMicTimer();
+          if (micRecorder) {
+            var rec = micRecorder;
+            /* Detach onstop first, so the halt itself can never
+               turn into a transcription. */
+            try { rec.onstop = null; } catch (e) {}
+            if (rec.state && rec.state !== "inactive") {
+              try { rec.stop(); } catch (e) {}
+            }
+            micRecorder = null;
           }
+          releaseMicTracks();
+          micChunks = [];
+          micState = "idle";
+          setMicUI();
+          hideMicNote();
         }
 
-        if (micBtn && SpeechRecognitionCtor) {
+        if (micBtn && micSupported) {
           /* Supported: reveal the button. Unsupported browsers never
              see it and the composer is unchanged. */
           micBtn.hidden = false;
           micBtn.addEventListener("click", function () {
             if (uploading || sending) return;
-            if (micWanted) stopDictation();
-            else startDictation();
-          });
-        }
-
-        if (micLangBtn && SpeechRecognitionCtor) {
-          /* The language chip is revealed together with the mic
-             button, and stays hidden with it when speech
-             recognition is unsupported. */
-          updateMicLangChip();
-          micLangBtn.hidden = false;
-          micLangBtn.addEventListener("click", function () {
-            if (uploading || sending) return;
-            cycleMicLang();
+            if (micState === "recording") stopMicRecording();
+            else if (micState === "idle") startMicRecording();
           });
         }
 
